@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applicationFormApi } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * Category & Other Reservation — exact UI match to CategoryAndOtherReservation.aspx
@@ -114,7 +115,8 @@ export default function Category() {
   }, [])
 
   const handleChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     setForm(f => {
       const u = { ...f, [name]: value }
       if (name === 'categoryID') {

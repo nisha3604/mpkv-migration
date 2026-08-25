@@ -13,6 +13,7 @@ namespace Mpkv.Api.Services
         FeeResponseEntity SetFeeTransactionResponse(FeeTransactionEntity ft);
         FeeTransactionEntity? GetTransactionDetails(long transactionId);
         FeeProceedResponse SaveApplicationFeeDetails(long candidateId, string userLoginId, string ipAddress);
+        PaymentHistoryResponse GetTransactionHistory(long candidateId);
     }
 
     public class FeeService : IFeeService
@@ -73,5 +74,51 @@ namespace Mpkv.Api.Services
         }
 
         private static uint ComputeCrc32(string input) { var bytes = System.Text.Encoding.UTF8.GetBytes(input); uint crc = 0xFFFFFFFF; uint poly = 0xEDB88320; foreach (var b in bytes) { crc ^= b; for (int i = 0; i < 8; i++) crc = (crc & 1) != 0 ? (crc >> 1) ^ poly : crc >> 1; } return crc ^ 0xFFFFFFFF; }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GET TRANSACTION HISTORY
+        // GET /api/fee/transaction-history
+        // Mirrors: PaymentHistory.aspx → FeeWorker().GetTransactionHistory(CandidateID)
+        // SP: Fee_GetTransactionHistory @PayeeID
+        // ══════════════════════════════════════════════════════════════════════
+        public PaymentHistoryResponse GetTransactionHistory(long candidateId)
+        {
+            var r = new PaymentHistoryResponse();
+            try
+            {
+                var p = new Dapper.DynamicParameters();
+                p.Add("@PayeeID", candidateId);
+                var dt = _db.GetDataTable("Fee_GetTransactionHistory", p);
+                if (dt == null) return r;
+
+                bool HC(string n) => dt.Columns.Contains(n);
+
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    var t = new PaymentTransactionDto
+                    {
+                        TransactionID       = HC("TransactionID")   ? row["TransactionID"]?.ToString()   ?? "" : "",
+                        Purpose             = HC("Purpose")         ? row["Purpose"]?.ToString()         ?? "" : "",
+                        FeeAmount           = HC("FeeAmount")       ? row["FeeAmount"]?.ToString()       ?? "" : "",
+                        ServiceCharge       = HC("ServiceCharge")   ? row["ServiceCharge"]?.ToString()   ?? "" : "",
+                        TotalAmount         = HC("TotalAmount")     ? row["TotalAmount"]?.ToString()     ?? "" : "",
+                        PaymentGateway      = HC("PaymentGateway")  ? row["PaymentGateway"]?.ToString()  ?? "" : "",
+                        TransactionDate     = HC("TransactionDate") ? row["TransactionDate"]?.ToString() ?? "" : "",
+                        PaymentDate         = HC("PaymentDate")     ? row["PaymentDate"]?.ToString()     ?? "" : "",
+                        BankReferenceNo     = HC("BankReferenceNo") ? row["BankReferenceNo"]?.ToString() ?? "" : "",
+                        TransactionResponse = HC("TransactionResponse") ? row["TransactionResponse"]?.ToString() ?? "" : "",
+                        TransactionStatus   = HC("TransactionStatus")   ? row["TransactionStatus"]?.ToString()   ?? "" : "",
+                        IsPaid              = HC("IsPaid") && row["IsPaid"] != System.DBNull.Value && Convert.ToBoolean(row["IsPaid"]),
+                        ApplicationID       = HC("PayeeApplicationID") ? row["PayeeApplicationID"]?.ToString() ?? "" : "",
+                        CandidateName       = HC("PayeeName")          ? row["PayeeName"]?.ToString()          ?? "" : "",
+                        AppliedCourse       = HC("AppliedCourse")      ? row["AppliedCourse"]?.ToString()      ?? "" : "",
+                    };
+                    if (t.IsPaid) r.PaidTransactions.Add(t);
+                    else          r.FailedTransactions.Add(t);
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"[GetTransactionHistory] Error: {ex.Message}"); }
+            return r;
+        }
     }
 }

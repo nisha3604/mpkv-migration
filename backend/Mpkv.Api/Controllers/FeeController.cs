@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Mpkv.Api.Models.Candidate;
 using Mpkv.Api.Services;
 
@@ -30,5 +32,27 @@ namespace Mpkv.Api.Controllers
         [HttpGet("payment-failed")]
         public IActionResult PaymentFailed([FromQuery] string? msg)
             => Ok(new PaymentFailedInfo { Success = false, Message = "Payment failed or was cancelled.", FailedMessage = msg ?? "Your payment could not be processed. Please try again.", RedirectUrl = "/candidate/fee" });
+
+        // GET /api/fee/transaction-history — mirrors PaymentHistory.aspx
+        [HttpGet("transaction-history"), Authorize]
+        public IActionResult GetTransactionHistory()
+        {
+            var candidateId = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
+            if (candidateId <= 0) return Unauthorized();
+            return Ok(_feeService.GetTransactionHistory(candidateId));
+        }
+
+        // GET /api/fee/receipt/{transactionId} — mirrors PaymentReceipt.aspx
+        // Returns transaction details for print receipt (no auth check on transactionId —
+        // FeeService.GetTransactionDetails already fetches by TransactionID)
+        [HttpGet("receipt/{transactionId}"), Authorize]
+        public IActionResult GetReceipt(long transactionId)
+        {
+            if (transactionId <= 0) return BadRequest(new { message = "Invalid transaction ID." });
+            var tx = _feeService.GetTransactionDetails(transactionId);
+            if (tx == null || tx.TransactionID <= 0)
+                return NotFound(new { message = "Transaction not found." });
+            return Ok(tx);
+        }
     }
 }

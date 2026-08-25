@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { accountApi } from '../../services/api'
 import PublicLayout from '../../components/PublicLayout'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * ForgotLoginId — mirrors ForgotLoginID.aspx exact flow:
@@ -34,7 +35,8 @@ export default function ForgotLoginId() {
   const clearErrors = () => { setFieldErrors({}); setError('') }
 
   const handleChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     setForm(f => ({ ...f, [name]: value }))
     setFieldErrors(fe => ({ ...fe, [name]: '' }))
     setError('')

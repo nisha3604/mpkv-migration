@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { authApi } from '../../services/api'
 import PublicLayout from '../../components/PublicLayout'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * Unified Login — same page for Candidate (91), College (61) and Admin (11/12).
@@ -21,7 +22,7 @@ export default function Login() {
   const [showPwd, setShowPwd] = useState(false)
 
   const handleChange = e => {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+    setForm(f => ({ ...f, [e.target.name]: normalizedEventValue(e) }))
     setError('')
   }
 

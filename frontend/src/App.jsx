@@ -30,6 +30,15 @@ import Documents           from './pages/candidate/Documents'
 import Fee                 from './pages/candidate/Fee'
 import PaymentSuccess      from './pages/candidate/PaymentSuccess'
 import PaymentFailed       from './pages/candidate/PaymentFailed'
+import Summary             from './pages/candidate/Summary'
+import ApplicationForm     from './pages/candidate/ApplicationForm'
+import ApplicationFormPrint from './pages/candidate/ApplicationFormPrint'
+import UnlockForm             from './pages/candidate/UnlockForm'
+import ChangeMobileEmail      from './pages/candidate/ChangeMobileEmail'
+import ChangeSecurityQuestion from './pages/candidate/ChangeSecurityQuestion'
+import ChangePassword         from './pages/candidate/ChangePassword'
+import PaymentHistory         from './pages/candidate/PaymentHistory'
+import PaymentReceipt         from './pages/candidate/PaymentReceipt'
 
 // ── College pages (UserTypeID = 61) ───────────────────────────────────────────
 import CollegeDashboard    from './pages/college/Dashboard'
@@ -112,7 +121,25 @@ export default function App() {
         <Route path="/candidate/fee"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Fee /></CandidateLayout></ProtectedRoute>} />
         <Route path="/candidate/summary"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ComingSoon title="Application Summary" /></CandidateLayout></ProtectedRoute>} />
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Summary /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/application-form"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ApplicationForm /></CandidateLayout></ProtectedRoute>} />
+        {/* Print page — no layout, auto-prints, opens in new window like old ApplicationFormPrint.aspx */}
+        <Route path="/candidate/application-form/print"
+          element={<ProtectedRoute allowedRoles={[91]}><ApplicationFormPrint /></ProtectedRoute>} />
+        <Route path="/candidate/unlock-form"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><UnlockForm /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/change-password"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ChangePassword /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/change-mobile-email"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ChangeMobileEmail /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/change-security-question"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ChangeSecurityQuestion /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/payment-history"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><PaymentHistory /></CandidateLayout></ProtectedRoute>} />
+        {/* Print receipt — no layout, auto-prints, new window */}
+        <Route path="/candidate/payment-receipt/:transactionId"
+          element={<ProtectedRoute allowedRoles={[91]}><PaymentReceipt /></ProtectedRoute>} />
 
         {/* ── College routes (UserTypeID = 61) ──────────────────────────── */}
         <Route path="/college/dashboard"

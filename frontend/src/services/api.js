@@ -66,6 +66,12 @@ export const accountApi = {
   sendOtpEmail            : (data) => api.post('/account/send-otp/email', data),
   verifyOtp               : (data) => api.post('/account/verify-otp', data),
   resetPassword           : (data) => api.post('/account/reset-password', data),
+  // Miscellaneous
+  changePassword          : (data) => api.post('/account/change-password', data),
+  changeMobile            : (data) => api.post('/account/change-mobile', data),
+  changeEmail             : (data) => api.post('/account/change-email', data),
+  getSecurityQuestion     : ()     => api.get('/account/security-question'),
+  changeSecurityQuestion  : (data) => api.post('/account/change-security-question', data),
 }
 
 // ── Candidate Dashboard ───────────────────────────────────────────────────────
@@ -126,6 +132,11 @@ export const applicationFormApi = {
   getFeeDetails   : ()                   => api.get('/applicationform/fee'),
   initiateFee     : (paymentGatewayID)   => api.post('/applicationform/fee/initiate', { paymentGatewayID }),
   proceedFee      : ()                   => api.post('/applicationform/fee/proceed'),
+
+  getSummary      : ()                   => api.get('/applicationform/summary'),
+  lockForm        : ()                   => api.post('/applicationform/summary/lock'),
+  getUnlockEligibility : ()             => api.get('/applicationform/unlock/eligibility'),
+  unlockForm      : ()                   => api.post('/applicationform/unlock'),
 }
 
 // ── Fee gateway callbacks ─────────────────────────────────────────────────────
@@ -134,6 +145,8 @@ export const feeApi = {
     api.get(`/fee/payment-success?txId=${txId}&refNo=${encodeURIComponent(refNo ?? '')}&amount=${amount ?? 0}`),
   getPaymentFailed  : (msg) =>
     api.get(`/fee/payment-failed?msg=${encodeURIComponent(msg ?? '')}`),
+  getTransactionHistory : () => api.get('/fee/transaction-history'),
+  getReceipt            : (txId) => api.get(`/fee/receipt/${txId}`),
 }
 
 // ── College (self-service — UserTypeID 61) ────────────────────────────────────
