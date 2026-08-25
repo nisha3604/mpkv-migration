@@ -1,9 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
-import ProtectedRoute   from './components/ProtectedRoute'
-import PublicLayout     from './components/PublicLayout'
-import CandidateLayout  from './components/CandidateLayout'
-import CollegeLayout    from './components/CollegeLayout'
+import { Routes, Route } from 'react-router-dom'
+import { AuthProvider }  from './context/AuthContext'
+import ProtectedRoute    from './components/ProtectedRoute'
+import PublicLayout      from './components/PublicLayout'
+import CandidateLayout   from './components/CandidateLayout'
+import CollegeLayout     from './components/CollegeLayout'
 
 // ── Common pages ──────────────────────────────────────────────────────────────
 import Home             from './pages/common/Home'
@@ -17,35 +17,39 @@ import Unauthorized     from './pages/common/Unauthorized'
 import NotFound         from './pages/common/NotFound'
 
 // ── Candidate pages (UserTypeID = 91) ─────────────────────────────────────────
-import CandidateDashboard  from './pages/candidate/Dashboard'
-import Personal            from './pages/candidate/Personal'
-import Address             from './pages/candidate/Address'
-import Category            from './pages/candidate/Category'
-import Qualification       from './pages/candidate/Qualification'
-import Sports              from './pages/candidate/Sports'
-import Shortlist           from './pages/candidate/Shortlist'
-import SetPreferences      from './pages/candidate/SetPreferences'
-import PhotoSign           from './pages/candidate/PhotoSign'
-import Documents           from './pages/candidate/Documents'
-import Fee                 from './pages/candidate/Fee'
-import PaymentSuccess      from './pages/candidate/PaymentSuccess'
-import PaymentFailed       from './pages/candidate/PaymentFailed'
+import CandidateDashboard from './pages/candidate/Dashboard'
+import Personal           from './pages/candidate/Personal'
+import Address            from './pages/candidate/Address'
+import Category           from './pages/candidate/Category'
+import Qualification      from './pages/candidate/Qualification'
+import Sports             from './pages/candidate/Sports'
+import Shortlist          from './pages/candidate/Shortlist'
+import SetPreferences     from './pages/candidate/SetPreferences'
+import PhotoSign          from './pages/candidate/PhotoSign'
+import Documents          from './pages/candidate/Documents'
+import Fee                from './pages/candidate/Fee'
+import PaymentSuccess     from './pages/candidate/PaymentSuccess'
+import PaymentFailed      from './pages/candidate/PaymentFailed'
 
-// ── College pages (UserTypeID = 61) ───────────────────────────────────────────
-import CollegeDashboard    from './pages/college/Dashboard'
-import CollegeSummary      from './pages/college/Summary'
-import CollegeEdit         from './pages/college/EditDetails'
+// ── College pages (UserTypeID = 61 + admin 11/12) ─────────────────────────────
+import CollegeDashboard             from './pages/college/Dashboard'
+import CollegeSummary               from './pages/college/Summary'
+import CollegeEdit                  from './pages/college/EditDetails'
+import CheckAllotmentStatus         from './pages/college/CheckAllotmentStatus'
+import CheckApplicationID           from './pages/college/CheckApplicationID'
+import CounsellingCheckApplicationID from './pages/college/CounsellingCheckApplicationID'
+import AllotmentReportByCourse      from './pages/college/AllotmentReportByCourse'
+import CompositeAdmissionReportByCourse from './pages/college/CompositeAdmissionReportByCourse'
+import CandidatesEligibleForCounselling from './pages/college/CandidatesEligibleForCounselling'
+import UpdateProfile                    from './pages/college/UpdateProfile'
 
 // ── Admin pages (UserTypeID = 11 / 12) ────────────────────────────────────────
-import AdminDashboard          from './pages/admin/Dashboard'
-import AdminCollegeList        from './pages/admin/CollegeList'
-import AdminCollegePasswords   from './pages/admin/CollegePasswords'
-import AdminResetPassword      from './pages/admin/ResetCollegePassword'
+import AdminDashboard        from './pages/admin/Dashboard'
+import AdminCollegeList      from './pages/admin/CollegeList'
+import AdminCollegePasswords from './pages/admin/CollegePasswords'
+import AdminResetPassword    from './pages/admin/ResetCollegePassword'
 
-// Admin also reuses college summary + edit with a collegeId query param
-// (same component, role-checked inside the component)
-
-// ── Coming-soon placeholder ───────────────────────────────────────────────────
+// ── ComingSoon placeholder ─────────────────────────────────────────────────────
 function ComingSoon({ title }) {
   return (
     <div className="min-h-[50vh] flex items-center justify-center">
@@ -54,28 +58,39 @@ function ComingSoon({ title }) {
           <i className="fas fa-tools text-emerald-600 text-xl" />
         </div>
         <h2 className="text-xl font-bold text-gray-700 mb-2">{title}</h2>
-        <p className="text-gray-400 text-sm">This page is coming soon.</p>
+        <p className="text-gray-400 text-sm">This page is under development.</p>
       </div>
     </div>
   )
 }
+
+// ── Shorthand wrappers ─────────────────────────────────────────────────────────
+const C  = (roles, Layout, Page) => (
+  <ProtectedRoute allowedRoles={roles}>
+    <Layout><Page /></Layout>
+  </ProtectedRoute>
+)
+const CC = (roles, Layout, title) => (
+  <ProtectedRoute allowedRoles={roles}>
+    <Layout><ComingSoon title={title} /></Layout>
+  </ProtectedRoute>
+)
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
 
-        {/* ── Public routes (no auth required) ──────────────────────────── */}
-        <Route path="/"               element={<Home />} />
-        <Route path="/login"          element={<Login />} />
-        <Route path="/register"       element={<Registration />} />
-        <Route path="/register/info"  element={<RegistrationInfo />} />
-        <Route path="/forgot-login-id"   element={<ForgotLoginId />} />
-        <Route path="/forgot-password"   element={<ForgotPassword />} />
-        <Route path="/reset-password"    element={<ResetPassword />} />
-        <Route path="/unauthorized"   element={<Unauthorized />} />
+        {/* ── Public ───────────────────────────────────────────────────── */}
+        <Route path="/"                element={<Home />} />
+        <Route path="/login"           element={<Login />} />
+        <Route path="/register"        element={<Registration />} />
+        <Route path="/register/info"   element={<RegistrationInfo />} />
+        <Route path="/forgot-login-id" element={<ForgotLoginId />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password"  element={<ResetPassword />} />
+        <Route path="/unauthorized"    element={<Unauthorized />} />
 
-        {/* Public static pages */}
         <Route path="/search-college" element={<PublicLayout><ComingSoon title="Search Colleges" /></PublicLayout>} />
         <Route path="/allotment"      element={<PublicLayout><ComingSoon title="Allotment List" /></PublicLayout>} />
         <Route path="/about"          element={<PublicLayout><ComingSoon title="About Us" /></PublicLayout>} />
@@ -84,61 +99,76 @@ export default function App() {
         <Route path="/refund"         element={<PublicLayout><ComingSoon title="Refund & Cancellation" /></PublicLayout>} />
         <Route path="/disclaimer"     element={<PublicLayout><ComingSoon title="Disclaimer" /></PublicLayout>} />
 
-        {/* Payment gateway callbacks — no auth, no layout (browser redirect from gateway) */}
+        {/* Payment gateway callbacks — no auth, no layout */}
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failed"  element={<PaymentFailed />} />
 
-        {/* ── Candidate routes (UserTypeID = 91) ────────────────────────── */}
-        <Route path="/candidate/dashboard"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><CandidateDashboard /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/personal"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Personal /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/address"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Address /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/category"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Category /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/qualification"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Qualification /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/sports"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Sports /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/shortlist"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Shortlist /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/preferences"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><SetPreferences /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/photo-sign"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><PhotoSign /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/documents"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Documents /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/fee"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Fee /></CandidateLayout></ProtectedRoute>} />
-        <Route path="/candidate/summary"
-          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ComingSoon title="Application Summary" /></CandidateLayout></ProtectedRoute>} />
+        {/* ── Candidate (91) ───────────────────────────────────────────── */}
+        <Route path="/candidate/dashboard"   element={C([91], CandidateLayout, CandidateDashboard)} />
+        <Route path="/candidate/personal"    element={C([91], CandidateLayout, Personal)} />
+        <Route path="/candidate/address"     element={C([91], CandidateLayout, Address)} />
+        <Route path="/candidate/category"    element={C([91], CandidateLayout, Category)} />
+        <Route path="/candidate/qualification" element={C([91], CandidateLayout, Qualification)} />
+        <Route path="/candidate/sports"      element={C([91], CandidateLayout, Sports)} />
+        <Route path="/candidate/shortlist"   element={C([91], CandidateLayout, Shortlist)} />
+        <Route path="/candidate/preferences" element={C([91], CandidateLayout, SetPreferences)} />
+        <Route path="/candidate/photo-sign"  element={C([91], CandidateLayout, PhotoSign)} />
+        <Route path="/candidate/documents"   element={C([91], CandidateLayout, Documents)} />
+        <Route path="/candidate/fee"         element={C([91], CandidateLayout, Fee)} />
+        <Route path="/candidate/summary"     element={CC([91], CandidateLayout, 'Application Summary')} />
 
-        {/* ── College routes (UserTypeID = 61) ──────────────────────────── */}
-        <Route path="/college/dashboard"
-          element={<ProtectedRoute allowedRoles={[61]}><CollegeLayout><CollegeDashboard /></CollegeLayout></ProtectedRoute>} />
-        <Route path="/college/summary"
-          element={<ProtectedRoute allowedRoles={[61]}><CollegeLayout><CollegeSummary /></CollegeLayout></ProtectedRoute>} />
-        <Route path="/college/edit"
-          element={<ProtectedRoute allowedRoles={[61]}><CollegeLayout><CollegeEdit /></CollegeLayout></ProtectedRoute>} />
+        {/* Candidate allotment status — shared with college */}
+        <Route path="/candidate/admission/allotment-status"
+          element={C([91], CandidateLayout, CheckAllotmentStatus)} />
 
-        {/* ── Admin routes (UserTypeID = 11 or 12) ──────────────────────── */}
-        <Route path="/admin/dashboard"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><AdminDashboard /></CollegeLayout></ProtectedRoute>} />
-        <Route path="/admin/college/list"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><AdminCollegeList /></CollegeLayout></ProtectedRoute>} />
-        {/* Admin college summary — same component as college summary, accepts ?collegeId= */}
-        <Route path="/admin/college/summary"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><CollegeSummary /></CollegeLayout></ProtectedRoute>} />
-        {/* Admin college edit — same component as college edit, accepts ?collegeId= */}
-        <Route path="/admin/college/edit"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><CollegeEdit /></CollegeLayout></ProtectedRoute>} />
-        <Route path="/admin/college/passwords"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><AdminCollegePasswords /></CollegeLayout></ProtectedRoute>} />
-        <Route path="/admin/college/reset-password"
-          element={<ProtectedRoute allowedRoles={[11,12]}><CollegeLayout><AdminResetPassword /></CollegeLayout></ProtectedRoute>} />
+        {/* ── College (61) ─────────────────────────────────────────────── */}
+        <Route path="/college/dashboard" element={C([61], CollegeLayout, CollegeDashboard)} />
+        <Route path="/college/summary"   element={C([61], CollegeLayout, CollegeSummary)} />
+        <Route path="/college/edit"      element={C([61], CollegeLayout, CollegeEdit)} />
 
-        {/* 404 fallback */}
+        {/* Admission Menu */}
+        <Route path="/college/admission/allotment-status"
+          element={C([61,11,12], CollegeLayout, CheckAllotmentStatus)} />
+        <Route path="/college/admission/confirm"
+          element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+        <Route path="/college/admission/cancel"
+          element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+        <Route path="/college/admission/admission-letter"
+          element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+        <Route path="/college/admission/rejection-letter"
+          element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+        <Route path="/college/admission/cancellation-letter"
+          element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+
+        {/* Spot Round Menu */}
+        <Route path="/college/spot-round/offer-seat"
+          element={C([61,31,11,12], CollegeLayout, CounsellingCheckApplicationID)} />
+
+        {/* Reports Menu */}
+        <Route path="/college/reports/allotment"
+          element={C([61,11,12], CollegeLayout, AllotmentReportByCourse)} />
+        <Route path="/college/reports/composite"
+          element={C([61,11,12], CollegeLayout, CompositeAdmissionReportByCourse)} />
+        <Route path="/college/reports/composite"
+          element={CC([61,11,12], CollegeLayout, 'Composite Admission Report')} />
+        <Route path="/college/reports/eligible"
+          element={C([61,11,12], CollegeLayout, CandidatesEligibleForCounselling)} />
+
+        {/* Miscellaneous */}
+        <Route path="/college/misc/update-profile"
+          element={C([61,11,12], CollegeLayout, UpdateProfile)} />
+        <Route path="/college/misc/security-question" element={CC([61,11,12], CollegeLayout, 'Change Security Question')} />
+        <Route path="/college/misc/change-password"   element={CC([61,11,12], CollegeLayout, 'Change Password')} />
+
+        {/* ── Admin (11, 12) ────────────────────────────────────────────── */}
+        <Route path="/admin/dashboard"              element={C([11,12], CollegeLayout, AdminDashboard)} />
+        <Route path="/admin/college/list"           element={C([11,12], CollegeLayout, AdminCollegeList)} />
+        <Route path="/admin/college/summary"        element={C([11,12], CollegeLayout, CollegeSummary)} />
+        <Route path="/admin/college/edit"           element={C([11,12], CollegeLayout, CollegeEdit)} />
+        <Route path="/admin/college/passwords"      element={C([11,12], CollegeLayout, AdminCollegePasswords)} />
+        <Route path="/admin/college/reset-password" element={C([11,12], CollegeLayout, AdminResetPassword)} />
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
 
       </Routes>

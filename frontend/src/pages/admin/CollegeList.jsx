@@ -2,110 +2,264 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminCollegeApi, collegeApi } from '../../services/api'
 
-export default function AdminCollegeList() {
+/**
+ * College List — mirrors CollegeList.aspx + CollegeList.aspx.cs
+ *
+ * Exact functionality from old project:
+ *  - Page_Load: LoadMasters() → Course + District dropdowns
+ *  - SP: College_GetCollegeList(@CourseID, @DistrictID, @CollegeCode, @CollegeName)
+ *  - Loads list on page load (same as GetCollegeList() called in Page_Load)
+ *  - Search button → btnProceed_Click → re-runs GetCollegeList()
+ *  - Edit icon → gvCollegeList_SelectedIndexChanging → navigate to CollegeSummary
+ *  - Grid header rows show applied filter values (Course/District/CollegeCode/CollegeName)
+ *  - CollegeCode: numbers only, max 4 digits
+ *  - Export to Excel button (opens grid data as downloadable CSV — browser-side equivalent)
+ *
+ * Columns: Sr.No., CollegeCode, District, CollegeName, Course, CourseStatus, CurrentStatus, Edit
+ */
+export default function CollegeList() {
   const navigate = useNavigate()
+
+  const [masters,  setMasters]  = useState({ courses: [], districts: [] })
+  const [filter,   setFilter]   = useState({ courseID: '0', districtID: '0', collegeCode: '', collegeName: '' })
   const [colleges, setColleges] = useState([])
   const [loading,  setLoading]  = useState(false)
+  const [searched, setSearched] = useState(false)
   const [error,    setError]    = useState('')
-  const [filter,   setFilter]   = useState({ courseID: 0, districtID: 0, collegeCode: '', collegeName: '' })
-  const [masters,  setMasters]  = useState({ districts: [], courses: [] })
+  const [noRecord, setNoRecord] = useState(false)
 
+  // ── Load masters on mount (mirrors LoadMasters()) ─────────────────────────
   useEffect(() => {
-    // Load masters for filter dropdowns
-    collegeApi.getDetails(0).then(res => {
-      setMasters({ districts: res.data.districts ?? [], courses: res.data.courses ?? [] })
-    }).catch(() => {})
+    collegeApi.getDetails(null)
+      .then(res => {
+        setMasters({
+          courses   : [{ value: '0', text: 'All' }, ...(res.data.courses    ?? [])],
+          districts : [{ value: '0', text: 'All' }, ...(res.data.districts  ?? [])],
+        })
+      })
+      .catch(() => {})
+
+    // Load all on page load — mirrors Page_Load calling GetCollegeList()
     handleSearch()
   }, [])
 
-  const handleSearch = () => {
-    setLoading(true); setError('')
-    adminCollegeApi.getList(filter)
-      .then(res => setColleges(res.data.colleges ?? []))
+  // ── Search (mirrors btnProceed_Click → GetCollegeList()) ─────────────────
+  const handleSearch = (f = filter) => {
+    setLoading(true); setError(''); setNoRecord(false)
+    adminCollegeApi.getList({
+      courseID   : f.courseID,
+      districtID : f.districtID,
+      collegeCode: f.collegeCode,
+      collegeName: f.collegeName,
+    })
+      .then(res => {
+        const list = res.data.colleges ?? []
+        setColleges(list)
+        setSearched(true)
+        if (list.length === 0) setNoRecord(true)
+      })
       .catch(() => setError('Failed to load college list.'))
       .finally(() => setLoading(false))
   }
 
-  const V = { navy:'#14212e', primary:'#059669', border:'#e2e8f0', bg:'#f5f6fa' }
-  const inp = { padding:'8px 10px', border:`1.5px solid ${V.border}`, borderRadius:8, fontSize:13, fontFamily:'inherit', width:'100%' }
+  const handleFilterChange = e => {
+    const { name, value } = e.target
+    // CollegeCode: numbers only (mirrors AllowOnlyNumbers JS)
+    if (name === 'collegeCode' && value && !/^\d*$/.test(value)) return
+    setFilter(p => ({ ...p, [name]: value }))
+  }
+
+  // ── Click Edit → navigate to Summary (mirrors gvCollegeList_SelectedIndexChanging)
+  const handleEdit = (collegeID) => {
+    navigate(`/admin/college/summary?collegeId=${collegeID}`)
+  }
+
+  // ── Export to Excel (browser-side CSV — replaces server-side Excel export) ─
+  const handleExport = () => {
+    if (!colleges.length) return
+    const headers = ['Sr.No.', 'College Code', 'District', 'College Name', 'Course', 'Course Status', 'Current Status']
+    const rows    = colleges.map((c, i) => [
+      i + 1, c.collegeCode, c.district, c.collegeName, c.course, c.courseStatus, c.status
+    ])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v ?? ''}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a'); a.href = url; a.download = 'CollegeList.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── Applied filter labels (mirrors gvCollegeList_RowCreated header rows) ─
+  const selectedCourseName   = masters.courses.find(c => c.value === filter.courseID)?.text    ?? 'All'
+  const selectedDistrictName = masters.districts.find(d => d.value === filter.districtID)?.text ?? 'All'
 
   return (
-    <div style={{ fontFamily:'inherit', background:V.bg, minHeight:'100vh', padding:24 }}>
-      {/* Search */}
-      <div style={{ background:'#fff', border:`1px solid ${V.border}`, borderRadius:12, padding:20, marginBottom:16, boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
-        <h3 style={{ fontSize:14, fontWeight:700, color:V.navy, marginBottom:14, borderLeft:'3px solid #059669', paddingLeft:10 }}>Search Colleges</h3>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
-          <div>
-            <select value={filter.courseID} onChange={e => setFilter(p=>({...p,courseID:e.target.value}))} style={inp}>
-              <option value={0}>All Courses</option>
-              {masters.courses.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
-            </select>
-          </div>
-          <div>
-            <select value={filter.districtID} onChange={e => setFilter(p=>({...p,districtID:e.target.value}))} style={inp}>
-              <option value={0}>All Districts</option>
-              {masters.districts.map(d => <option key={d.value} value={d.value}>{d.text}</option>)}
-            </select>
-          </div>
-          <input placeholder="College Code" value={filter.collegeCode} onChange={e=>setFilter(p=>({...p,collegeCode:e.target.value}))} style={inp} />
-          <input placeholder="College Name" value={filter.collegeName} onChange={e=>setFilter(p=>({...p,collegeName:e.target.value}))} style={inp} />
-        </div>
-        <div style={{ marginTop:12, display:'flex', justifyContent:'flex-end' }}>
-          <button onClick={handleSearch} style={{ background:V.primary, color:'#fff', border:'none', borderRadius:8, padding:'9px 24px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-            Search
-          </button>
-        </div>
-      </div>
+    <>
+      <div className="flex-1 max-w-screen-xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5">
 
-      {error && <div style={{ color:'#dc2626', fontSize:13, marginBottom:12 }}>{error}</div>}
+        {/* Error */}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
+            <i className="fas fa-exclamation-circle" /> {error}
+          </div>
+        )}
 
-      {/* Results */}
-      <div style={{ background:'#fff', border:`1px solid ${V.border}`, borderRadius:12, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
-        <div style={{ background:V.navy, padding:'12px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <span style={{ color:'#fff', fontWeight:700, fontSize:14 }}>College List ({colleges.length})</span>
+        {/* No records */}
+        {noRecord && !error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
+            <i className="fas fa-exclamation-circle" /> No Records Found.
+          </div>
+        )}
+
+        {/* ── Search Card ────────────────────────────────────────────── */}
+        <div className="card mb-4 shadow-sm overflow-hidden">
+          <div className="bg-gray-900 px-5 py-3 flex items-center gap-2">
+            <i className="fas fa-search text-gray-400 text-sm" />
+            <span className="text-white font-semibold text-sm tracking-wide">Search College</span>
+          </div>
+          <div className="px-5 py-5">
+            <div className="grid grid-cols-4 gap-4">
+              {/* Course dropdown */}
+              <div>
+                <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  Course
+                </label>
+                <select name="courseID" value={filter.courseID} onChange={handleFilterChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                  {masters.courses.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
+                </select>
+              </div>
+
+              {/* District dropdown */}
+              <div>
+                <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  District
+                </label>
+                <select name="districtID" value={filter.districtID} onChange={handleFilterChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                  {masters.districts.map(d => <option key={d.value} value={d.value}>{d.text}</option>)}
+                </select>
+              </div>
+
+              {/* College Code — numbers only, max 4 */}
+              <div>
+                <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  College Code
+                </label>
+                <input name="collegeCode" value={filter.collegeCode} onChange={handleFilterChange}
+                  maxLength={4} placeholder="e.g. 1234"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              </div>
+
+              {/* College Name */}
+              <div>
+                <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  College Name
+                </label>
+                <input name="collegeName" value={filter.collegeName} onChange={handleFilterChange}
+                  placeholder="Search by name"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Search button */}
+          <div className="px-5 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-center">
+            <button onClick={() => handleSearch(filter)} disabled={loading}
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 px-6 py-2.5 rounded-lg transition-colors">
+              {loading
+                ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Searching...</>
+                : <><i className="fas fa-search" /> Search</>}
+            </button>
+          </div>
         </div>
-        {loading ? (
-          <div style={{ padding:32, textAlign:'center' }}><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"/></div>
-        ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-              <thead>
-                <tr style={{ background:'#f8fafc' }}>
-                  {['#','Code','District','College Name','Course','Status','Current Status','Action'].map((h,i) => (
-                    <th key={i} style={{ padding:'10px 14px', textAlign:'left', fontWeight:700, color:'#374151', borderBottom:`1px solid ${V.border}`, fontSize:12, whiteSpace:'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {colleges.length === 0
-                  ? <tr><td colSpan={8} style={{ padding:24, textAlign:'center', color:'#94a3b8' }}>No colleges found. Use search above.</td></tr>
-                  : colleges.map((c,i) => (
-                    <tr key={i} style={{ borderBottom:`1px solid ${V.border}` }}>
-                      <td style={{ padding:'10px 14px', color:'#64748b' }}>{i+1}</td>
-                      <td style={{ padding:'10px 14px', fontWeight:600 }}>{c.collegeCode}</td>
-                      <td style={{ padding:'10px 14px' }}>{c.district}</td>
-                      <td style={{ padding:'10px 14px' }}>{c.collegeName}</td>
-                      <td style={{ padding:'10px 14px' }}>{c.course}</td>
-                      <td style={{ padding:'10px 14px' }}>{c.courseStatus}</td>
-                      <td style={{ padding:'10px 14px' }}>
-                        <span style={{ background:c.isActive?'#dcfce7':'#fee2e2', color:c.isActive?'#166534':'#991b1b', padding:'2px 8px', borderRadius:10, fontSize:11, fontWeight:700 }}>
-                          {c.isActive ? 'Active' : 'Inactive'}
+
+        {/* ── Results Card (visible only when results exist) ─────────── */}
+        {searched && colleges.length > 0 && (
+          <div className="card shadow-sm overflow-hidden">
+            <div className="bg-gray-900 px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-list text-gray-400 text-sm" />
+                <span className="text-white font-semibold text-sm tracking-wide">
+                  College List ({colleges.length})
+                </span>
+              </div>
+              {/* Export to Excel button */}
+              <button onClick={handleExport}
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded transition-colors">
+                <i className="fas fa-file-excel" /> Export to Excel
+              </button>
+            </div>
+
+            {/* Filter summary header rows — mirrors gvCollegeList_RowCreated */}
+            <div className="border-b border-gray-200" style={{ background: '#D5CEA3' }}>
+              {[
+                { label: 'Course',       value: selectedCourseName },
+                { label: 'District',     value: selectedDistrictName },
+                { label: 'College Code', value: filter.collegeCode || 'All' },
+                { label: 'College Name', value: filter.collegeName || 'All' },
+              ].map((row, i) => (
+                <div key={i} className="px-5 py-1 text-sm font-bold text-gray-800 border-b border-gray-300 last:border-b-0">
+                  {row.label} : {row.value}
+                </div>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-800 text-white">
+                    {['Sr. No.', 'College Code', 'District', 'College Name', 'Course', 'Course Status', 'Current Status', 'Edit'].map((h, i) => (
+                      <th key={i} className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${i === 3 ? 'text-left' : ''}`}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {colleges.map((c, i) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-center text-gray-500 text-xs">{i + 1}.</td>
+                      <td className="px-4 py-3 text-center font-semibold text-gray-900">{c.collegeCode}</td>
+                      <td className="px-4 py-3 text-center text-gray-700 whitespace-nowrap">{c.district}</td>
+                      <td className="px-4 py-3 text-left text-gray-900 font-medium">{c.collegeName}</td>
+                      <td className="px-4 py-3 text-center text-gray-700">{c.course}</td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+                          {c.courseStatus}
                         </span>
                       </td>
-                      <td style={{ padding:'10px 14px' }}>
-                        <button onClick={() => navigate(`/admin/college/summary?collegeId=${c.collegeID}`)}
-                          style={{ background:'#eff6ff', color:'#1d4ed8', border:'none', borderRadius:6, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                          View →
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
+                          c.isActive
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {c.status || (c.isActive ? 'Active' : 'Inactive')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {/* Edit icon — mirrors fa-edit in old grid command field */}
+                        <button onClick={() => handleEdit(c.collegeID)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors mx-auto"
+                          title="Edit">
+                          <i className="fas fa-edit text-base" />
                         </button>
                       </td>
                     </tr>
-                  ))
-                }
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+
       </div>
-    </div>
+
+      {/* Footer */}
+      <footer className="text-center text-xs text-gray-400 py-3 border-t border-gray-200 mt-4">
+        © {new Date().getFullYear()} Mahatma Phule Krishi Vidyapeeth, Rahuri
+      </footer>
+    </>
   )
 }

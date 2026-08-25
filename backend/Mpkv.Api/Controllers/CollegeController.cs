@@ -54,7 +54,8 @@ namespace Mpkv.Api.Controllers
         public IActionResult GetSummary([FromQuery] long? collegeId = null)
         {
             var result = _collegeService.GetSummary(ResolveCollegeId(collegeId));
-            return result.Success ? Ok(result) : BadRequest(result);
+            // Always return 200 — frontend reads success flag
+            return Ok(result);
         }
 
         // GET /api/college/details?collegeId=

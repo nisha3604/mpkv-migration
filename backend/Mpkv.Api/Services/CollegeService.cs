@@ -45,6 +45,7 @@ namespace Mpkv.Api.Services
             {
                 var param = new DynamicParameters();
                 param.Add("@CollegeID", collegeId);
+                // SP returns single result set — use GetDataTable directly
                 var dt = _db.GetDataTable("College_GetCollegeSummary", param);
                 if (dt == null || dt.Rows.Count == 0)
                     return new CollegeSummaryResponse { Success = false, Message = "College not found." };
@@ -66,16 +67,15 @@ namespace Mpkv.Api.Services
             {
                 var param = new DynamicParameters();
                 param.Add("@CollegeID", collegeId);
+                // SP returns single result set — use GetDataTable directly
                 var dt = _db.GetDataTable("College_GetCollegeDetails", param);
                 if (dt == null || dt.Rows.Count == 0)
                     return new CollegeDetailsResponse { Success = false, Message = "College not found." };
 
-                response.Details = MapSummary(dt.Rows[0], dt);
-                response.Success = true;
-
-                // Load master dropdowns (same as old EditCollegeDetails.aspx LoadMasters())
-                response.Districts     = GetDropdown("Base_GetMasterDistrict");
-                response.Courses       = GetDropdown("Base_GetMasterCourse");
+                response.Details        = MapSummary(dt.Rows[0], dt);
+                response.Success        = true;
+                response.Districts      = GetDropdown("Base_GetMasterDistrict");
+                response.Courses        = GetDropdown("Base_GetMasterCourse");
                 response.CourseStatuses = GetDropdown("Base_GetMasterCourseStatus");
             }
             catch (Exception ex) { response.Success = false; response.Message = ex.Message; }
@@ -332,8 +332,8 @@ namespace Mpkv.Api.Services
                 CourseStatus            = H("CourseStatus")            ? row["CourseStatus"]?.ToString()            ?? "" : "",
                 CourseStatusID          = H("CourseStatusID")          ? Convert.ToInt16(row["CourseStatusID"])      : (short)0,
                 Intake                  = H("Intake")                  ? Convert.ToInt16(row["Intake"])              : (short)0,
-                HasManagementQuota      = H("HasManagementQuota")      ? (Convert.ToInt16(row["HasManagementQuota"]) == 1 ? "YES" : "NO") : "NO",
-                HasManagementQuotaValue = H("HasManagementQuota")      ? Convert.ToInt16(row["HasManagementQuota"])  : (short)0,
+                HasManagementQuota      = H("HasManagementQuota") ? row["HasManagementQuota"]?.ToString() ?? "NO" : "NO",
+                HasManagementQuotaValue = H("HasManagementQuota") ? (row["HasManagementQuota"]?.ToString()?.ToUpper() == "YES" ? (short)1 : (short)0) : (short)0,
                 PrincipalName           = H("PrincipalName")           ? row["PrincipalName"]?.ToString()           ?? "" : "",
                 PrincipalEmailID        = H("PrincipalEMailID")        ? row["PrincipalEMailID"]?.ToString()        ?? "" : "",
                 PrincipalMobileNo       = H("PrincipalMobileNo")       ? row["PrincipalMobileNo"]?.ToString()       ?? "" : "",

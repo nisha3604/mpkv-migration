@@ -154,4 +154,33 @@ export const adminCollegeApi = {
   resetPassword     : (data)         => api.post('/admin/college/reset-password', data),
 }
 
+// ── Admission / Allotment ─────────────────────────────────────────────────────
+export const admissionApi = {
+  getPhases          : ()     => api.get('/admission/phases'),
+  checkAllotment     : (data) => api.post('/admission/allotment-status', data),
+  downloadLetter     : (data) => api.post('/admission/download-allotment-letter', data),
+  payRefusalFee      : (data) => api.post('/admission/refusal-fee', data),
+  checkApplicationID : (data) => api.post('/admission/check-application-id', data),
+}
+
+// ── Counselling (Spot Round) ──────────────────────────────────────────────────
+export const counsellingApi = {
+  getPhases : ()     => api.get('/counselling/phases'),
+  check     : (data) => api.post('/counselling/check', data),
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+export const reportApi = {
+  getPhases           : ()                    => api.get('/reports/phases'),
+  getAllotmentByCourse : (phaseId, collegeId) => api.get(`/reports/allotment-by-course?phaseId=${phaseId}${collegeId ? `&collegeId=${collegeId}` : ''}`),
+  getCompositeByCourse: (collegeId)          => api.get(`/reports/composite-by-course${collegeId ? `?collegeId=${collegeId}` : ''}`),
+  getEligibleForCounselling: ()              => api.get('/reports/eligible-for-counselling'),
+}
+
+// ── User Profile ──────────────────────────────────────────────────────────────
+export const profileApi = {
+  getProfile  : ()     => api.get('/profile'),
+  saveProfile : (data) => api.post('/profile', data),
+}
+
 export default api

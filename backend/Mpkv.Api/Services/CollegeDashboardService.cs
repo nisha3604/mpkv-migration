@@ -65,8 +65,23 @@ namespace Mpkv.Api.Services
                     {
                         var r2 = dt2.Rows[0];
                         bool H2(string n) => dt2.Columns.Contains(n) && r2[n] != DBNull.Value;
-                        dashboard.UserName          = H2("UserName")          ? r2["UserName"]?.ToString()          ?? "" : "";
-                        dashboard.LastLoginDateTime = H2("LastLoginDateTime") ? r2["LastLoginDateTime"]?.ToString() ?? "" : "";
+                        dashboard.UserName          = H2("UserName")             ? r2["UserName"]?.ToString()             ?? "" : "";
+                        // Format LastLoginDateTime — SP returns datetime, format to dd/MM/yyyy HH:mm:ss
+                        if (H2("LastLoginDateTime"))
+                        {
+                            var raw = r2["LastLoginDateTime"]?.ToString() ?? "";
+                            if (DateTime.TryParse(raw, out var dt3))
+                                dashboard.LastLoginDateTime = dt3.ToString("dd/MM/yyyy hh:mm:ss tt");
+                            else
+                                dashboard.LastLoginDateTime = raw;
+                        }
+                        // Also format CurrentLoginDateTime from DB if available
+                        if (H2("CurrentLoginDateTime"))
+                        {
+                            var raw = r2["CurrentLoginDateTime"]?.ToString() ?? "";
+                            if (DateTime.TryParse(raw, out var dt4))
+                                dashboard.CurrentLoginDateTime = dt4.ToString("dd/MM/yyyy hh:mm:ss tt");
+                        }
                     }
                 }
                 catch { /* session info is non-critical */ }

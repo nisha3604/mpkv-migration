@@ -77,6 +77,11 @@ builder.Services.AddScoped<ICandidateService, CandidateService>();
 // College services
 builder.Services.AddScoped<ICollegeService, CollegeService>();
 builder.Services.AddScoped<ICollegeDashboardService, CollegeDashboardService>();
+builder.Services.AddScoped<IAllotmentService, AllotmentService>();
+builder.Services.AddScoped<ICheckApplicationIDService, CheckApplicationIDService>();
+builder.Services.AddScoped<ICounsellingService, CounsellingService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 builder.Services.AddHttpClient();  // for NSDL polling
 
