@@ -508,7 +508,7 @@ export default function Registration() {
                     value={form.password}
                     onChange={handleChange}
                     disabled={!form.appliedCourseID}
-                    className={inputCls(fieldErrors.password) + ' pr-10'}
+                    className={inputCls(fieldErrors.password) + ' pr-10 input-no-uppercase'}
                   />
                   <button
                     type="button"
@@ -529,7 +529,7 @@ export default function Registration() {
                     value={form.confirmPassword}
                     onChange={handleChange}
                     disabled={!form.appliedCourseID}
-                    className={inputCls(fieldErrors.confirmPassword) + ' pr-10'}
+                    className={inputCls(fieldErrors.confirmPassword) + ' pr-10 input-no-uppercase'}
                   />
                   <button
                     type="button"

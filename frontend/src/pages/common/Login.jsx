@@ -81,7 +81,7 @@ export default function Login() {
                   <i className="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                   <input name="userPassword" type={showPwd ? 'text' : 'password'} autoComplete="current-password" placeholder="Password"
                     value={form.userPassword} onChange={handleChange}
-                    className="w-full pl-9 pr-10 py-2.5 border-[1.5px] border-emerald-100 rounded-lg text-sm text-gray-900 bg-emerald-50 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition" />
+                    className="w-full pl-9 pr-10 py-2.5 border-[1.5px] border-emerald-100 rounded-lg text-sm text-gray-900 bg-emerald-50 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition input-no-uppercase" />
                   <button type="button" onClick={() => setShowPwd(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" tabIndex={-1}>
                     <i className={`fas ${showPwd ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
                   </button>
