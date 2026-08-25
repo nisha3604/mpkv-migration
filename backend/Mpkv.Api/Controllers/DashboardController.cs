@@ -20,6 +20,6 @@ namespace Mpkv.Api.Controllers
         }
 
         [HttpGet]             public IActionResult GetDashboard() { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); return Ok(_dashboardService.GetDashboard(id)); }
-        [HttpGet("progress")] public IActionResult GetProgress()  { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); return Ok(_dashboardService.GetApplicationProgress(id)); }
+        [HttpGet("progress")] public IActionResult GetProgress()  { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); return Ok(_dashboardService.GetDashboard(id)); }
     }
 }

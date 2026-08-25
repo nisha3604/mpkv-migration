@@ -31,7 +31,8 @@ export function AuthProvider({ children }) {
 
   const updateUser = (fields) => {
     setUser(prev => {
-      const updated = { ...prev, ...fields }
+      const base    = prev ?? {}
+      const updated = { ...base, ...fields }
       localStorage.setItem('mpkv_user', JSON.stringify(updated))
       return updated
     })

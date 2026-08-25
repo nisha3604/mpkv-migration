@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applicationFormApi } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * Personal Info — layout exactly matches old Personal.aspx screenshot:
@@ -110,7 +111,8 @@ export default function Personal() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     setForm(f => ({ ...f, [name]: value }))
     setFieldErrors(fe => ({ ...fe, [name]: '' }))
     setError('')

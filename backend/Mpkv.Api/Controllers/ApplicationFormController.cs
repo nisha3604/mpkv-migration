@@ -56,6 +56,47 @@ namespace Mpkv.Api.Controllers
         [HttpPost("fee/proceed")]
         public IActionResult ProceedFee() { var c=GetCandidateId(); if (c<=0) return Unauthorized(); var r=_appFormService.SaveFeeDetails(c,GetUserLoginId(),GetIpAddress()); return r.Success ? Ok(r) : BadRequest(r); }
 
+        // ── Summary & Lock ────────────────────────────────────────────────────
+        // GET  /api/applicationform/summary  → mirrors GetApplicationFormSummary()
+        // POST /api/applicationform/summary/lock → mirrors LockApplicationForm()
+        [HttpGet("summary")]
+        public IActionResult GetSummary()
+        {
+            var c = GetCandidateId();
+            if (c <= 0) return Unauthorized();
+            var r = _appFormService.GetApplicationFormSummary(c, GetUserLoginId());
+            return r.Success ? Ok(r) : BadRequest(r);
+        }
+
+        [HttpPost("summary/lock")]
+        public IActionResult LockForm()
+        {
+            var c = GetCandidateId();
+            if (c <= 0) return Unauthorized();
+            var r = _appFormService.LockApplicationForm(c, GetUserLoginId(), GetIpAddress());
+            return r.Success ? Ok(r) : BadRequest(r);
+        }
+
+        // GET  /api/applicationform/unlock/eligibility
+        // POST /api/applicationform/unlock
+        [HttpGet("unlock/eligibility")]
+        public IActionResult GetUnlockEligibility()
+        {
+            var c = GetCandidateId();
+            if (c <= 0) return Unauthorized();
+            var r = _appFormService.GetUnlockEligibility(c, GetUserLoginId());
+            return Ok(r);
+        }
+
+        [HttpPost("unlock")]
+        public IActionResult UnlockForm()
+        {
+            var c = GetCandidateId();
+            if (c <= 0) return Unauthorized();
+            var r = _appFormService.UnlockApplicationForm(c, GetUserLoginId(), GetIpAddress());
+            return r.Success ? Ok(r) : BadRequest(r);
+        }
+
         [HttpPost("upload-photo")]
         [RequestSizeLimit(200*1024)]
         public async Task<IActionResult> UploadPhoto([FromForm] IFormFile file) { if (file==null||file.Length==0) return BadRequest(new UploadPhotoSignResponse{Success=false,Message="Please Select Photograph to Upload."}); var c=GetCandidateId(); if (c<=0) return Unauthorized(); var r=await _appFormService.UploadPhoto(c,GetUserLoginId(),GetIpAddress(),file); return r.Success ? Ok(r) : BadRequest(r); }

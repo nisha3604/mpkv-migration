@@ -178,12 +178,8 @@ export default function Sports() {
             {/* form-card-body — flex row */}
             <div style={{ padding: 24, display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-              {/* yn-item — Do you have any Sports Certificate? */}
-              <div style={{
-                background: '#fff', borderRadius: 10,
-                border: `1.5px solid ${fieldErrors.isSports ? V.danger : V.border}`,
-                padding: '16px 18px', minWidth: 300
-              }}>
+              {/* Do you have any Sports Certificate? */}
+              <div style={{ padding: '0', minWidth: 300 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: V.textPrimary, marginBottom: 10 }}>
                   Do you have any Sports Certificate ?{' '}
                   <span style={{ color: V.danger }}>*</span>

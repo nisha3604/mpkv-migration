@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applicationFormApi } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * Address page — mirrors Address.aspx exactly.
@@ -91,7 +92,8 @@ export default function Address() {
 
   // Correspondence field change
   const handleCorrChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     const updated = { ...corr, [name]: value }
 
     // Reset district when state changes — mirrors ddlCorrState_SelectedIndexChanged
@@ -121,7 +123,8 @@ export default function Address() {
 
   // Permanent field change
   const handlePermChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     if (name === 'stateID') setPerm(p => ({ ...p, stateID: value, districtID: '' }))
     else setPerm(p => ({ ...p, [name]: value }))
     setFieldErrors(fe => ({ ...fe, [`perm_${name}`]: '' }))

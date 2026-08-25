@@ -17,19 +17,19 @@ import Unauthorized     from './pages/common/Unauthorized'
 import NotFound         from './pages/common/NotFound'
 
 // ── Candidate pages (UserTypeID = 91) ─────────────────────────────────────────
-import CandidateDashboard from './pages/candidate/Dashboard'
-import Personal           from './pages/candidate/Personal'
-import Address            from './pages/candidate/Address'
-import Category           from './pages/candidate/Category'
-import Qualification      from './pages/candidate/Qualification'
-import Sports             from './pages/candidate/Sports'
-import Shortlist          from './pages/candidate/Shortlist'
-import SetPreferences     from './pages/candidate/SetPreferences'
-import PhotoSign          from './pages/candidate/PhotoSign'
-import Documents          from './pages/candidate/Documents'
-import Fee                from './pages/candidate/Fee'
-import PaymentSuccess     from './pages/candidate/PaymentSuccess'
-import PaymentFailed      from './pages/candidate/PaymentFailed'
+import CandidateDashboard  from './pages/candidate/Dashboard'
+import Personal            from './pages/candidate/Personal'
+import Address             from './pages/candidate/Address'
+import Category            from './pages/candidate/Category'
+import Qualification       from './pages/candidate/Qualification'
+import Sports              from './pages/candidate/Sports'
+import Shortlist           from './pages/candidate/Shortlist'
+import SetPreferences      from './pages/candidate/SetPreferences'
+import PhotoSign           from './pages/candidate/PhotoSign'
+import Documents           from './pages/candidate/Documents'
+import Fee                 from './pages/candidate/Fee'
+import PaymentSuccess      from './pages/candidate/PaymentSuccess'
+import PaymentFailed       from './pages/candidate/PaymentFailed'
 
 // ── College pages (UserTypeID = 61 + admin 11/12) ─────────────────────────────
 import CollegeDashboard             from './pages/college/Dashboard'
@@ -103,23 +103,31 @@ export default function App() {
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failed"  element={<PaymentFailed />} />
 
-        {/* ── Candidate (91) ───────────────────────────────────────────── */}
-        <Route path="/candidate/dashboard"   element={C([91], CandidateLayout, CandidateDashboard)} />
-        <Route path="/candidate/personal"    element={C([91], CandidateLayout, Personal)} />
-        <Route path="/candidate/address"     element={C([91], CandidateLayout, Address)} />
-        <Route path="/candidate/category"    element={C([91], CandidateLayout, Category)} />
-        <Route path="/candidate/qualification" element={C([91], CandidateLayout, Qualification)} />
-        <Route path="/candidate/sports"      element={C([91], CandidateLayout, Sports)} />
-        <Route path="/candidate/shortlist"   element={C([91], CandidateLayout, Shortlist)} />
-        <Route path="/candidate/preferences" element={C([91], CandidateLayout, SetPreferences)} />
-        <Route path="/candidate/photo-sign"  element={C([91], CandidateLayout, PhotoSign)} />
-        <Route path="/candidate/documents"   element={C([91], CandidateLayout, Documents)} />
-        <Route path="/candidate/fee"         element={C([91], CandidateLayout, Fee)} />
-        <Route path="/candidate/summary"     element={CC([91], CandidateLayout, 'Application Summary')} />
-
-        {/* Candidate allotment status — shared with college */}
-        <Route path="/candidate/admission/allotment-status"
-          element={C([91], CandidateLayout, CheckAllotmentStatus)} />
+        {/* ── Candidate routes (UserTypeID = 91) ────────────────────────── */}
+        <Route path="/candidate/dashboard"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><CandidateDashboard /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/personal"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Personal /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/address"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Address /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/category"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Category /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/qualification"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Qualification /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/sports"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Sports /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/shortlist"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Shortlist /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/preferences"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><SetPreferences /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/photo-sign"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><PhotoSign /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/documents"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Documents /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/fee"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Fee /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/candidate/summary"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ComingSoon title="Application Summary" /></CandidateLayout></ProtectedRoute>} />
 
         {/* ── College (61) ─────────────────────────────────────────────── */}
         <Route path="/college/dashboard" element={C([61], CollegeLayout, CollegeDashboard)} />

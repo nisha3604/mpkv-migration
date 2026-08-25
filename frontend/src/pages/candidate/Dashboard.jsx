@@ -5,7 +5,7 @@ import { dashboardApi } from '../../services/api'
 import ProgressStepper from '../../components/ProgressStepper'
 
 export default function Dashboard() {
-  const { user, logout }   = useAuth()
+  const { user, logout, updateUser } = useAuth()
   const navigate           = useNavigate()
   const [data,    setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -16,6 +16,8 @@ export default function Dashboard() {
       try {
         const res = await dashboardApi.getDashboard()
         setData(res.data)
+        // isFormLocked comes from dashboard response Table 0 ApplicationFormStatus
+        if (updateUser) updateUser({ formLocked: res.data?.isFormLocked ?? false })
       } catch (err) {
         if (err.response?.status === 401) {
           logout()
@@ -84,7 +86,7 @@ export default function Dashboard() {
 
   const completedSteps = data?.progress?.completedSteps ?? 1
   const totalSteps     = data?.progress?.totalSteps ?? 6
-  const isLocked       = data?.progress?.formLocked ?? false
+  const isLocked       = data?.isFormLocked ?? false
 
   return (
     <>

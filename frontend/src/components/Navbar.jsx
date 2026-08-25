@@ -1,6 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { dashboardApi } from '../services/api'
+
+// Resolve photo URL — strips ViewFile.aspx wrapper, handles local /uploads/...
+function resolvePhotoUrl(url) {
+  if (!url) return '/dummy-user.png'
+  let current = url
+  while (current.includes('ViewFile.aspx') && current.includes('FileURL=')) {
+    const match = current.match(/FileURL=([^&\s]+)/)
+    if (!match?.[1]) break
+    const extracted = decodeURIComponent(match[1])
+    if (extracted === current) break
+    current = extracted
+  }
+  return current || '/dummy-user.png'
+}
 
 /**
  * Navbar — MasterPageWithSession equivalent (shown after login).
@@ -34,16 +49,40 @@ import { useAuth } from '../context/AuthContext'
  *      - Change Security Question
  */
 export default function Navbar() {
-  const { user, logout, isLoggedIn } = useAuth()
+  const { user, logout, isLoggedIn, updateUser } = useAuth()
+  const location = useLocation()
 
-  const [langActive,   setLangActive]   = useState('en')
-  const [openDropdown, setOpenDropdown] = useState(null)
-  const [mobileOpen,   setMobileOpen]   = useState(false)
-  const [mobileExpand, setMobileExpand] = useState(null)
-  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [langActive,      setLangActive]     = useState('en')
+  const [openDropdown,    setOpenDropdown]   = useState(null)
+  const [mobileOpen,      setMobileOpen]     = useState(false)
+  const [mobileExpand,    setMobileExpand]   = useState(null)
+  const [showLogoutModal, setShowLogoutModal]= useState(false)
+  const [isFormLocked,    setIsFormLocked]   = useState(user?.formLocked === true)
 
   const navRef    = useRef(null)   // dark navbar
   const headerRef = useRef(null)   // photo + user dropdown area
+
+  // Fetch real lock status from backend on every mount —
+  // so the correct menu shows on every page, not just after visiting Dashboard.
+  useEffect(() => {
+    if (!isLoggedIn) return
+    dashboardApi.getDashboard()
+      .then(res => {
+        const locked = res.data?.isFormLocked ?? false
+        setIsFormLocked(locked)
+        if (updateUser) updateUser({ formLocked: locked })
+      })
+      .catch(() => {
+        // Fall back to localStorage value if API call fails
+        setIsFormLocked(user?.formLocked === true)
+      })
+  }, [isLoggedIn])
+
+  // Also sync immediately when user.formLocked changes in localStorage
+  // (e.g. after UnlockForm sets updateUser({ formLocked: false }))
+  useEffect(() => {
+    setIsFormLocked(user?.formLocked === true)
+  }, [user?.formLocked])
 
   // ── Close ALL dropdowns when clicking outside both nav + header ───────────
   useEffect(() => {
@@ -71,7 +110,7 @@ export default function Navbar() {
   const toggleDropdown = key =>
     setOpenDropdown(prev => prev === key ? null : key)
 
-  // ── Menu definitions — mirrors GetMenu() output for candidate (UserTypeID 91)
+  // menus — isFormLocked is set by dashboard API on mount
   const menus = [
     {
       key: 'allotment',
@@ -87,56 +126,73 @@ export default function Navbar() {
     {
       key: 'appform',
       label: 'Application Form',
-      items: [
-        { label: 'Personal Details',              to: '/candidate/personal'      },
-        { label: 'Address Details',               to: '/candidate/address'       },
-        { label: 'Category & Other Reservation Details', to: '/candidate/category' },
-        { label: 'Qualification Details',         to: '/candidate/qualification' },
-        { label: 'Sports Details',                to: '/candidate/sports'        },
-        { label: 'Shortlist Colleges',            to: '/candidate/shortlist'     },
-        { label: 'Set Preferences',               to: '/candidate/preferences'   },
-        { label: 'Upload Photo & Sign',           to: '/candidate/photo-sign'    },
-        { label: 'Upload Required Documents',     to: '/candidate/documents'     },
-        { label: 'Pay Application Fee',           to: '/candidate/fee'           },
-        { label: 'Lock Application Form',         to: '/candidate/summary'       },
-      ]
+      // Locked: only Print + Unlock — exactly as old project after locking
+      items: isFormLocked
+        ? [
+            { label: 'Print Application Form',  to: '/candidate/application-form' },
+            { label: 'Unlock Application Form', to: '/candidate/unlock-form'       },
+          ]
+        : [
+            { label: 'Personal Details',                     to: '/candidate/personal'      },
+            { label: 'Address Details',                      to: '/candidate/address'       },
+            { label: 'Category & Other Reservation Details', to: '/candidate/category'      },
+            { label: 'Qualification Details',                to: '/candidate/qualification' },
+            { label: 'Sports Details',                       to: '/candidate/sports'        },
+            { label: 'Shortlist Colleges',                   to: '/candidate/shortlist'     },
+            { label: 'Set Preferences',                      to: '/candidate/preferences'   },
+            { label: 'Upload Photo & Sign',                  to: '/candidate/photo-sign'    },
+            { label: 'Upload Required Documents',            to: '/candidate/documents'     },
+            { label: 'Pay Application Fee',                  to: '/candidate/fee'           },
+            { label: 'Lock Application Form',                to: '/candidate/summary'       },
+          ]
     },
     {
       key: 'misc',
       label: 'Miscellaneous',
       items: [
         { label: 'Change Password',          to: '/candidate/change-password'          },
-        { label: 'Change Mobile / Email',    to: '/candidate/change-mobile-email'      },
+        { label: 'Change Mobile / E-Mail',   to: '/candidate/change-mobile-email'      },
         { label: 'Change Security Question', to: '/candidate/change-security-question' },
+        { label: 'Check Payment History',    to: '/candidate/payment-history'          },
       ]
     },
   ]
 
   // ── Shared nav link style (desktop)
-  const navLinkStyle = {
+  const navLinkStyle = (isActive = false) => ({
     display: 'flex', alignItems: 'center', gap: 6,
     color: '#ffffff', textDecoration: 'none',
     fontSize: 15, fontWeight: 500,
     padding: '10px 16px', whiteSpace: 'nowrap',
-    border: '1.5px solid transparent', borderRadius: 6,
-    cursor: 'pointer', background: 'transparent',
+    border: `1.5px solid ${isActive ? '#059669' : 'transparent'}`,
+    borderRadius: 6,
+    cursor: 'pointer',
+    background: isActive ? '#059669' : 'transparent',
     transition: 'all 0.2s ease', fontFamily: 'inherit'
-  }
+  })
+
+  const isMenuActive = () => false
+
+  const getDropItemStyle = (isActive = false) => ({
+    display: 'block',
+    padding: '11px 20px',
+    fontSize: 14,
+    lineHeight: 1.4,
+    color: isActive ? '#059669' : '#334155',
+    fontWeight: isActive ? 600 : 400,
+    textDecoration: 'none',
+    background: isActive ? '#ecfdf5' : '#ffffff',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
+  })
 
   // ── Dropdown panel style
   const dropdownStyle = {
-    position: 'absolute', top: '100%', left: 0,
+    position: 'absolute', top: '100%', left: 0, marginTop: 2,
     background: '#ffffff', border: '1px solid #e2e8f0',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-    borderRadius: 8, minWidth: 220, zIndex: 999,
-    padding: '4px 0'
-  }
-
-  const dropItemStyle = {
-    display: 'block', padding: '9px 18px',
-    fontSize: 14, color: '#14b8a6',
-    textDecoration: 'none', background: '#ffffff',
-    cursor: 'pointer', transition: 'background 0.15s'
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    borderRadius: 10, minWidth: 280, zIndex: 999,
+    padding: '6px 0', overflow: 'hidden'
   }
 
   if (!isLoggedIn) return null   // only render when logged in
@@ -181,9 +237,7 @@ export default function Navbar() {
               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
               <img
-                src={user?.photoPath
-                  ? (user.photoPath.startsWith('http') ? user.photoPath : `http://localhost:7001${user.photoPath}`)
-                  : '/dummy-user.png'}
+                src={resolvePhotoUrl(user?.photoPath)}
                 alt="Candidate"
                 style={{
                   width: 80, height: 80, borderRadius: '50%',
@@ -244,7 +298,7 @@ export default function Navbar() {
           <li>
             <Link
               to="/candidate/dashboard"
-              style={navLinkStyle}
+              style={navLinkStyle(false)}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#1fa876' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}
             >
@@ -253,47 +307,53 @@ export default function Navbar() {
           </li>
 
           {/* Dropdown menus */}
-          {menus.map(menu => (
+          {menus.map(menu => {
+            const menuActive = isMenuActive(menu)
+            const menuOpen = openDropdown === menu.key
+            return (
             <li key={menu.key} style={{ position: 'relative' }}>
               <button
                 onClick={() => toggleDropdown(menu.key)}
-                style={{
-                  ...navLinkStyle,
-                  background: openDropdown === menu.key ? 'rgba(255,255,255,0.08)' : 'transparent',
-                  borderColor: openDropdown === menu.key ? '#1fa876' : 'transparent'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#1fa876' }}
+                style={navLinkStyle(menuActive || menuOpen)}
+                onMouseEnter={e => { if (!menuActive && !menuOpen) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#1fa876' } }}
                 onMouseLeave={e => {
-                  if (openDropdown !== menu.key) {
+                  if (!menuActive && !menuOpen) {
                     e.currentTarget.style.background = 'transparent'
                     e.currentTarget.style.borderColor = 'transparent'
                   }
                 }}
               >
                 {menu.label}
-                <i className={`fas fa-chevron-${openDropdown === menu.key ? 'up' : 'down'}`}
+                <i className={`fas fa-chevron-${menuOpen ? 'up' : 'down'}`}
                   style={{ fontSize: 11, marginLeft: 4 }} />
               </button>
 
               {/* Dropdown panel */}
-              {openDropdown === menu.key && (
+              {menuOpen && (
                 <div style={dropdownStyle}>
-                  {menu.items.map(item => (
+                  {menu.items.map(item => {
+                    const itemActive = location.pathname === item.to
+                    return (
                     <Link
                       key={item.to}
                       to={item.to}
                       onClick={() => setOpenDropdown(null)}
-                      style={dropItemStyle}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f0fdf9'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+                      style={getDropItemStyle(itemActive)}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf9'; if (!itemActive) e.currentTarget.style.color = '#059669' }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = itemActive ? '#ecfdf5' : '#ffffff'
+                        e.currentTarget.style.color = itemActive ? '#059669' : '#334155'
+                      }}
                     >
                       {item.label}
                     </Link>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </li>
-          ))}
+            )
+          })}
         </ul>
 
         {/* Right: Language toggle */}
@@ -363,13 +423,24 @@ export default function Navbar() {
 
                 {mobileExpand === menu.key && (
                   <div style={{ background: '#0f1f2e', paddingLeft: 16 }}>
-                    {menu.items.map(item => (
+                    {menu.items.map(item => {
+                      const itemActive = location.pathname === item.to
+                      return (
                       <Link key={item.to} to={item.to}
                         onClick={() => { setMobileOpen(false); setMobileExpand(null) }}
-                        style={{ display: 'block', color: '#14b8a6', padding: '8px 20px', textDecoration: 'none', fontSize: 14 }}>
+                        style={{
+                          display: 'block',
+                          color: itemActive ? '#34d399' : '#94a3b8',
+                          background: itemActive ? 'rgba(5,150,105,0.15)' : 'transparent',
+                          padding: '8px 20px',
+                          textDecoration: 'none',
+                          fontSize: 14,
+                          fontWeight: itemActive ? 600 : 400,
+                        }}>
                         {item.label}
                       </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

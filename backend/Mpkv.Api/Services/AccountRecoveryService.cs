@@ -14,6 +14,12 @@ namespace Mpkv.Api.Services
         SendOtpResponse                 CheckAndSendOtpEmail(CheckAndSendOtpEmailRequest request);
         VerifyOtpResponse               VerifyOtp(VerifyOtpRequest request);
         ResetPasswordResponse           ResetPassword(ResetPasswordRequest request, string ipAddress);
+        // ── Miscellaneous ─────────────────────────────────────────────────────
+        AccountChangeResponse           ChangePassword(long userId, string userLoginId, string ipAddress, ChangePasswordRequest request);
+        AccountChangeResponse           ChangeMobileNo(long userId, string userLoginId, string ipAddress, string newMobileNo);
+        AccountChangeResponse           ChangeEmailId(long userId, string userLoginId, string ipAddress, string newEmailId);
+        SecurityQuestionDetailsResponse GetSecurityQuestionDetails(long userId);
+        AccountChangeResponse           ChangeSecurityQuestion(long userId, string userLoginId, string ipAddress, ChangeSecurityQuestionRequest request);
     }
 
     public class AccountRecoveryService : IAccountRecoveryService
@@ -247,5 +253,169 @@ namespace Mpkv.Api.Services
         private static string GenerateOTP(int length) { var rng = new Random(); return string.Concat(Enumerable.Range(0, length).Select(_ => rng.Next(0, 10).ToString())); }
         private static string MaskMobile(string mobile) => mobile.Length >= 10 ? "XXXXXX" + mobile[^4..] : mobile;
         private static string MaskEmail(string email) { var idx = email.IndexOf('@'); if (idx <= 1) return email; return email[0] + new string('*', Math.Min(idx - 1, 2)) + email[idx..]; }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // CHANGE PASSWORD
+        // POST /api/account/change-password
+        // Mirrors: ChangePassword.aspx btnChangePassword_Click
+        // SPs: Account_GetPassword (verify old), Account_ResetPassword (save new)
+        // ══════════════════════════════════════════════════════════════════════
+        public AccountChangeResponse ChangePassword(long userId, string userLoginId, string ipAddress, ChangePasswordRequest request)
+        {
+            try
+            {
+                // Get current password from DB and compare
+                var p1 = new DynamicParameters();
+                p1.Add("@UserID", userId);
+                var dt = _db.GetDataTable("Account_GetPassword", p1);
+                if (dt == null || dt.Rows.Count == 0)
+                    return new AccountChangeResponse { Success = false, Message = "User not found." };
+
+                var storedEncoded = dt.Rows[0]["UserPassword"]?.ToString() ?? "";
+                var storedDecoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(storedEncoded));
+
+                if (request.OldPassword != storedDecoded)
+                    return new AccountChangeResponse { Success = false, Message = "Please Enter Correct Old Password." };
+
+                if (request.NewPassword != request.ConfirmPassword)
+                    return new AccountChangeResponse { Success = false, Message = "Password and Confirm Password Should be Same." };
+
+                var newEncoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.NewPassword));
+                var p2 = new DynamicParameters();
+                p2.Add("@UserID",              userId);
+                p2.Add("@NewPassword",         newEncoded);
+                p2.Add("@LoggedInUserLoginID", userLoginId);
+                p2.Add("@IPAddress",           ipAddress);
+                var result = _db.ExecuteScalar("Account_ResetPassword", p2)?.ToString() ?? "";
+                if (result.ToUpper() == "Y")
+                    return new AccountChangeResponse { Success = true, Message = "Password Changed Successfully." };
+                return new AccountChangeResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change password." };
+            }
+            catch (Exception ex) { return new AccountChangeResponse { Success = false, Message = ex.Message }; }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // CHANGE MOBILE NUMBER
+        // POST /api/account/change-mobile
+        // Mirrors: ChangeMobileEMail.aspx btnChangeMobileNo_Click
+        // SP: Account_ChangeCandidateMobileNo
+        // ══════════════════════════════════════════════════════════════════════
+        public AccountChangeResponse ChangeMobileNo(long userId, string userLoginId, string ipAddress, string newMobileNo)
+        {
+            try
+            {
+                // Check duplicate
+                var chk = new DynamicParameters();
+                chk.Add("@CandidateID", userId);
+                chk.Add("@MobileNo",    newMobileNo.Trim());
+                var dup = _db.ExecuteScalar("ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisMobileNo", chk);
+                if (dup != null && Convert.ToBoolean(dup))
+                    return new AccountChangeResponse { Success = false, Message = $"Application Form using Mobile Number {newMobileNo} is Already Registered. Please Use Other Mobile Number." };
+
+                var p = new DynamicParameters();
+                p.Add("@CandidateID", userId);
+                p.Add("@MobileNo",    newMobileNo.Trim());
+                p.Add("@UserLoginID", userLoginId);
+                p.Add("@IPAddress",   ipAddress);
+                var result = _db.ExecuteScalar("Account_ChangeCandidateMobileNo", p)?.ToString() ?? "";
+                if (result.ToUpper() == "Y")
+                    return new AccountChangeResponse { Success = true, Message = "Mobile Number Changed Successfully." };
+                return new AccountChangeResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change mobile number." };
+            }
+            catch (Exception ex) { return new AccountChangeResponse { Success = false, Message = ex.Message }; }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // CHANGE EMAIL ID
+        // POST /api/account/change-email
+        // Mirrors: ChangeMobileEMail.aspx btnChangeEMailID_Click
+        // SP: Account_ChangeCandidateEMailID
+        // ══════════════════════════════════════════════════════════════════════
+        public AccountChangeResponse ChangeEmailId(long userId, string userLoginId, string ipAddress, string newEmailId)
+        {
+            try
+            {
+                // Check duplicate
+                var chk = new DynamicParameters();
+                chk.Add("@CandidateID", userId);
+                chk.Add("@EMailID",     newEmailId.Trim().ToLower());
+                var dup = _db.ExecuteScalar("ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisEMailID", chk);
+                if (dup != null && Convert.ToBoolean(dup))
+                    return new AccountChangeResponse { Success = false, Message = $"Application Form using E-Mail ID {newEmailId} is Already Registered. Please Use Other E-Mail ID." };
+
+                var p = new DynamicParameters();
+                p.Add("@CandidateID", userId);
+                p.Add("@EMailID",     newEmailId.Trim().ToLower());
+                p.Add("@UserLoginID", userLoginId);
+                p.Add("@IPAddress",   ipAddress);
+                var result = _db.ExecuteScalar("Account_ChangeCandidateEMailID", p)?.ToString() ?? "";
+                if (result.ToUpper() == "Y")
+                    return new AccountChangeResponse { Success = true, Message = "E-Mail ID Changed Successfully." };
+                return new AccountChangeResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change E-Mail ID." };
+            }
+            catch (Exception ex) { return new AccountChangeResponse { Success = false, Message = ex.Message }; }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GET SECURITY QUESTION DETAILS
+        // GET /api/account/security-question
+        // Mirrors: ChangeSecurityQuestion.aspx GetSecurityQuestion() + LoadMasters()
+        // SPs: Base_GetMasterTableList (Master_SecurityQuestion), Account_GetSecurityQuestionDetails
+        // ══════════════════════════════════════════════════════════════════════
+        public SecurityQuestionDetailsResponse GetSecurityQuestionDetails(long userId)
+        {
+            var r = new SecurityQuestionDetailsResponse();
+            try
+            {
+                // Load security question masters
+                var mp = new DynamicParameters();
+                mp.Add("@TableName",        "Master_SecurityQuestion");
+                mp.Add("@DataValueField",   "SecurityQuestionID");
+                mp.Add("@DataTextField",    "SecurityQuestion");
+                mp.Add("@ParentField",      "");
+                mp.Add("@ParentFieldValue", "");
+                mp.Add("@OrderByFields",    "SecurityQuestion");
+                var dt = _db.GetDataTable("Base_GetMasterTableList", mp);
+                if (dt != null)
+                    foreach (System.Data.DataRow row in dt.Rows)
+                        r.SecurityQuestions.Add(new DropdownItem { Value = row[0].ToString()!, Text = row[1].ToString()! });
+
+                // Get current security question for this user
+                var p = new DynamicParameters();
+                p.Add("@UserID", userId);
+                var dt2 = _db.GetDataTable("Account_GetSecurityQuestionDetails", p);
+                if (dt2 != null && dt2.Rows.Count > 0)
+                {
+                    r.CurrentSecurityQuestionID     = Convert.ToInt32(dt2.Rows[0]["SecurityQuestionID"]);
+                    r.CurrentSecurityQuestionAnswer = dt2.Rows[0]["SecurityQuestionAnswer"]?.ToString() ?? "";
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"GetSecurityQuestionDetails error: {ex.Message}"); }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // CHANGE SECURITY QUESTION
+        // POST /api/account/change-security-question
+        // Mirrors: ChangeSecurityQuestion.aspx btnChangeSecurityQuestion_Click
+        // SP: Account_ResetSecurityQuestion
+        // ══════════════════════════════════════════════════════════════════════
+        public AccountChangeResponse ChangeSecurityQuestion(long userId, string userLoginId, string ipAddress, ChangeSecurityQuestionRequest request)
+        {
+            try
+            {
+                var p = new DynamicParameters();
+                p.Add("@UserID",                  userId);
+                p.Add("@SecurityQuestionID",       request.SecurityQuestionID);
+                p.Add("@SecurityQuestionAnswer",   request.SecurityQuestionAnswer.Trim());
+                p.Add("@UserLoginID",              userLoginId);
+                p.Add("@IPAddress",                ipAddress);
+                var result = _db.ExecuteScalar("Account_ResetSecurityQuestion", p)?.ToString() ?? "";
+                if (result.ToUpper() == "Y")
+                    return new AccountChangeResponse { Success = true, Message = "Security Question Changed Successfully." };
+                return new AccountChangeResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change security question." };
+            }
+            catch (Exception ex) { return new AccountChangeResponse { Success = false, Message = ex.Message }; }
+        }
     }
 }

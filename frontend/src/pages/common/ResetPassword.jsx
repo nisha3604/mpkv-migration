@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { accountApi } from '../../services/api'
 import PublicLayout from '../../components/PublicLayout'
+import { normalizeInputValue } from '../../utils/formInput'
 
 /**
  * ResetPassword — single page that handles all 3 reset methods:
@@ -307,7 +308,7 @@ export default function ResetPassword() {
                       type="text"
                       placeholder="Enter your 10-digit Application Number"
                       value={verifyForm.userLoginID}
-                      onChange={e => { setVerifyForm(f => ({ ...f, userLoginID: e.target.value })); clearErrors() }}
+                      onChange={e => { setVerifyForm(f => ({ ...f, userLoginID: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                       className={iCls(fieldErrors.userLoginID)}
                     />
                   </Field>
@@ -332,7 +333,7 @@ export default function ResetPassword() {
                         type="text"
                         placeholder="Enter your answer"
                         value={verifyForm.securityQuestionAnswer}
-                        onChange={e => { setVerifyForm(f => ({ ...f, securityQuestionAnswer: e.target.value })); clearErrors() }}
+                        onChange={e => { setVerifyForm(f => ({ ...f, securityQuestionAnswer: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                         className={iCls(fieldErrors.securityQuestionAnswer)}
                       />
                     </Field>
@@ -345,7 +346,7 @@ export default function ResetPassword() {
                         type="email"
                         placeholder="Enter your registered email address"
                         value={verifyForm.emailID}
-                        onChange={e => { setVerifyForm(f => ({ ...f, emailID: e.target.value })); clearErrors() }}
+                        onChange={e => { setVerifyForm(f => ({ ...f, emailID: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                         className={iCls(fieldErrors.emailID)}
                       />
                     </Field>
@@ -359,7 +360,7 @@ export default function ResetPassword() {
                         maxLength={10}
                         placeholder="Enter your 10-digit mobile number"
                         value={verifyForm.mobileNo}
-                        onChange={e => { setVerifyForm(f => ({ ...f, mobileNo: e.target.value })); clearErrors() }}
+                        onChange={e => { setVerifyForm(f => ({ ...f, mobileNo: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                         className={iCls(fieldErrors.mobileNo)}
                       />
                     </Field>
@@ -427,7 +428,7 @@ export default function ResetPassword() {
                         type={showPwd ? 'text' : 'password'}
                         placeholder="Min. 6 characters"
                         value={pwdForm.newPassword}
-                        onChange={e => { setPwdForm(f => ({ ...f, newPassword: e.target.value })); clearErrors() }}
+                        onChange={e => { setPwdForm(f => ({ ...f, newPassword: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                         className={iCls(fieldErrors.newPassword) + ' pr-10'}
                       />
                       <button type="button" tabIndex={-1}
@@ -444,7 +445,7 @@ export default function ResetPassword() {
                         type={showCPwd ? 'text' : 'password'}
                         placeholder="Re-enter new password"
                         value={pwdForm.confirmPassword}
-                        onChange={e => { setPwdForm(f => ({ ...f, confirmPassword: e.target.value })); clearErrors() }}
+                        onChange={e => { setPwdForm(f => ({ ...f, confirmPassword: normalizeInputValue(e.target.name, e.target.value, e.target.type) })); clearErrors() }}
                         className={iCls(fieldErrors.confirmPassword) + ' pr-10'}
                       />
                       <button type="button" tabIndex={-1}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applicationFormApi } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { normalizedEventValue } from '../../utils/formInput'
 
 /**
  * Qualification Details — exact UI match to Qualification.aspx
@@ -93,7 +94,8 @@ export default function Qualification() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleChange = e => {
-    const { name, value } = e.target
+    const { name } = e.target
+    const value = normalizedEventValue(e)
     setForm(f => {
       const u = { ...f, [name]: value }
       // Clear gap fields when No selected — mirrors rbnlstIsEducationalGap_SelectedIndexChanged
@@ -235,9 +237,9 @@ export default function Qualification() {
                   </select>
                 </PField>
 
-                {/* Educational Gap — Yes/No in a yn-item card */}
+                {/* Educational Gap — Yes/No */}
                 <div style={{ gridColumn:'span 1' }}>
-                  <div style={{ border:`1.5px solid ${fieldErrors.isEducationalGap?V.danger:V.border}`, borderRadius:10, padding:'12px 14px' }}>
+                  <div style={{ padding:'0' }}>
                     <label style={{ display:'block', fontSize:12.5, fontWeight:600, color:V.textSecond, marginBottom:8 }}>
                       Is Educational Gap ? <span style={{ color:V.danger }}>*</span>
                     </label>

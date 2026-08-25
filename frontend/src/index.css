@@ -6,6 +6,26 @@
   body {
     @apply font-sans bg-gray-50 text-gray-800 antialiased;
   }
+
+  /* Uppercase display for text inputs — passwords, security answer & email excluded */
+  input[type="text"]:not(.input-no-uppercase),
+  input[type="tel"]:not(.input-no-uppercase),
+  textarea:not(.input-no-uppercase) {
+    text-transform: uppercase;
+  }
+
+  input[type="password"],
+  input[type="email"],
+  input.input-no-uppercase,
+  input[name="securityQuestionAnswer"],
+  input[name="password"],
+  input[name="confirmPassword"],
+  input[name="userPassword"],
+  input[name="newPassword"],
+  input[name="oldPassword"],
+  input[name="currentPassword"] {
+    text-transform: none;
+  }
 }
 
 @layer components {
@@ -36,4 +56,28 @@
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-100;
   }
+}
+
+/* Registration page — course selection animations */
+@keyframes courseSelectIn {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes selectedBadgePop {
+  0%   { opacity: 0; transform: scale(0.6); }
+  70%  { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.reg-course-card-enter {
+  animation: courseSelectIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.reg-section-enter {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.reg-selected-badge {
+  animation: selectedBadgePop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
