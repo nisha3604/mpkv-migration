@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { dashboardApi } from '../services/api'
+import SiteHeader from './SiteHeader'
+import SiteFooter from './SiteFooter'
 
-// Resolve photo URL — strips ViewFile.aspx wrapper, handles local /uploads/...
+// resolvePhotoUrl kept for backwards compat (SiteHeader has its own copy)
 function resolvePhotoUrl(url) {
   if (!url) return '/dummy-user.png'
   let current = url
@@ -62,7 +64,6 @@ export default function Navbar() {
   const [isFormLocked,    setIsFormLocked]   = useState(user?.formLocked === true)
 
   const navRef    = useRef(null)   // dark navbar
-  const headerRef = useRef(null)   // photo + user dropdown area
 
   // Fetch real lock status from backend on every mount —
   // so the correct menu shows on every page, not just after visiting Dashboard.
@@ -199,85 +200,8 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ════════════════════════════════════════════════════════════════
-          BRAND HEADER — same as MasterPageWithSession header
-      ════════════════════════════════════════════════════════════════ */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '10px 32px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-
-          {/* Left: Logo + University name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{
-              width: 85, height: 85, borderRadius: '50%',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: '#fff', flexShrink: 0, overflow: 'hidden'
-            }}>
-              <img src="/MPKVLogo.png" alt="MPKV Logo"
-                style={{ width: 83, height: 83, objectFit: 'contain' }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, color: '#64748b', lineHeight: 1.3 }}>
-                महात्मा फुले कृषि विद्यापीठ, राहुरी, अहिल्यानगर, महाराष्ट्र
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', lineHeight: 1.2, margin: '2px 0' }}>
-                Mahatma Phule Agriculture University
-              </div>
-              <div style={{ fontSize: 15, color: '#64748b' }}>
-                Rahuri, Ahilyanagar, Maharashtra
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Candidate photo + user dropdown */}
-          <div style={{ position: 'relative' }} ref={headerRef}>
-            <div
-              onClick={() => toggleDropdown('user')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-            >
-              <img
-                src={resolvePhotoUrl(user?.photoPath)}
-                alt="Candidate"
-                style={{
-                  width: 80, height: 80, borderRadius: '50%',
-                  border: '2px solid #e2e8f0', objectFit: 'cover',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'pointer'
-                }}
-                onError={e => { e.currentTarget.src = '/dummy-user.png' }}
-              />
-            </div>
-
-            {/* User dropdown — name + Sign Out */}
-            {openDropdown === 'user' && (
-              <div style={{
-                position: 'absolute', top: '100%', right: 0,
-                background: '#ffffff', border: '1px solid #e2e8f0',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                borderRadius: 8, minWidth: 200, zIndex: 1000,
-                padding: '12px', textAlign: 'center', marginTop: 4
-              }}>
-                <h6 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0f172a' }}>
-                  {user?.userName ?? user?.userLoginID ?? 'Candidate'}
-                </h6>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={e => { e.stopPropagation(); handleLogout() }}
-                  style={{
-                    background: '#dc3545', color: '#fff',
-                    border: 'none', padding: '7px 20px',
-                    borderRadius: 6, fontSize: 13, fontWeight: 600,
-                    cursor: 'pointer', width: '100%'
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </header>
+      {/* Shared university header */}
+      <SiteHeader onSignOut={() => setShowLogoutModal(true)} />
 
       {/* ════════════════════════════════════════════════════════════════
           DARK NAVBAR — same as MasterPageWithSession nav

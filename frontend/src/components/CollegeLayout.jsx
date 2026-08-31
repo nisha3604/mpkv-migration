@@ -1,23 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import SiteHeader from './SiteHeader'
+import SiteFooter from './SiteFooter'
 export default function CollegeLayout({ children }) {
   const { user, logout, isAdmin } = useAuth()
-  const navigate                  = useNavigate()
-  const [showLogout,    setShowLogout]    = useState(false)
-  const [showProfile,   setShowProfile]   = useState(false)
-  const [mobileOpen,    setMobileOpen]    = useState(false)
-  const [langActive,    setLangActive]    = useState(() => {
+  const navigate   = useNavigate()
+  const [showLogout, setShowLogout] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [langActive, setLangActive] = useState(() => {
     try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
   })
-  const profileRef = useRef(null)
-
-  // Close profile dropdown on outside click
-  useEffect(() => {
-    const handler = e => { if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
 
   const handleLogout = () => {
     logout()
@@ -68,57 +61,8 @@ export default function CollegeLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
 
-      {/* ── University Header ──────────────────────────────────────────── */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 32px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-
-          {/* Logo + name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 72, height: 72, borderRadius: '50%', border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', flexShrink: 0, overflow: 'hidden' }}>
-              <img src="/MPKVLogo.png" alt="MPKV Logo" style={{ width: 68, height: 68, objectFit: 'contain' }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.3 }}>महात्मा फुले कृषि विद्यापीठ, राहुरी, अहिल्यानगर, महाराष्ट्र</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>Mahatma Phule Agriculture University</div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>Rahuri, Ahilyanagar, Maharashtra</div>
-            </div>
-          </div>
-
-          {/* Right: clickable profile image only */}
-          <div ref={profileRef} style={{ position: 'relative' }}>
-            <img
-              src="/dummy-user.png"
-              alt="Profile"
-              onClick={() => setShowProfile(p => !p)}
-              style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid #e2e8f0', objectFit: 'cover', cursor: 'pointer', display: 'block' }}
-              onError={e => { e.currentTarget.src = '/dummy-user.png' }}
-            />
-
-            {/* Dropdown */}
-            {showProfile && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
-                background: '#fff', border: '1px solid #e2e8f0',
-                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                minWidth: 200, overflow: 'hidden'
-              }}>
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                  <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>Logged in as</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{user?.userLoginID}</div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{isAdmin ? 'Administrator' : `College · ${user?.userLoginID}`}</div>
-                </div>
-                <button
-                  onClick={() => { setShowProfile(false); setShowLogout(true) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, color: '#ef4444', fontWeight: 600, textAlign: 'left' }}
-                  onMouseEnter={e => e.currentTarget.style.background='#fef2f2'}
-                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                  <i className="fas fa-sign-out-alt" style={{ fontSize: 13 }}/> Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Shared university header */}
+      <SiteHeader onSignOut={() => setShowLogout(true)} />
 
       {/* ── Dark Navbar ────────────────────────────────────────────────── */}
       <nav style={{ backgroundColor: '#14212e', padding: '0 24px', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 40 }}>
@@ -165,10 +109,8 @@ export default function CollegeLayout({ children }) {
         {children}
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────────── */}
-      <footer style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', padding: '12px 0', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
-        © {new Date().getFullYear()} Mahatma Phule Krishi Vidyapeeth, Rahuri. All Rights Reserved.
-      </footer>
+      {/* Shared footer */}
+      <SiteFooter />
 
       {/* ── Sign Out Confirm Modal ─────────────────────────────────────── */}
       {showLogout && (
