@@ -191,8 +191,10 @@ export default function App() {
         {/* Miscellaneous */}
         <Route path="/college/misc/update-profile"
           element={C([61,11,12], CollegeLayout, UpdateProfile)} />
-        <Route path="/college/misc/security-question" element={CC([61,11,12], CollegeLayout, 'Change Security Question')} />
-        <Route path="/college/misc/change-password"   element={CC([61,11,12], CollegeLayout, 'Change Password')} />
+        <Route path="/college/misc/security-question"
+          element={C([61,11,12], CollegeLayout, ChangeSecurityQuestion)} />
+        <Route path="/college/misc/change-password"
+          element={C([61,11,12], CollegeLayout, ChangePassword)} />
 
         {/* ── Admin (11, 12) ────────────────────────────────────────────── */}
         <Route path="/admin/dashboard"              element={C([11,12], CollegeLayout, AdminDashboard)} />

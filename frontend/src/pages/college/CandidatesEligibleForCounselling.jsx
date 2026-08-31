@@ -34,29 +34,74 @@ export default function CandidatesEligibleForCounselling() {
     r.domicileDistrict?.toLowerCase().includes(search.toLowerCase())
   )
 
-  // Excel export with proper formatting
+  // Excel exports ALL filtered rows — built from data array (not DOM)
   const handleExport = () => {
-    if (!tableRef.current) return
     const printedOn = new Date().toLocaleString('en-IN')
+
+    const hdr = ['Sr.','Applied Course','Points','Application ID','Candidate Name','Gender','DOB','Category','Domicile District','Mobile No.','E-Mail ID','Documents Discrepancy']
+      .map(h => `<th style="background:#14212e;color:#fff;padding:6px 9px;border:1px solid #999;font-weight:bold;white-space:nowrap;">${h}</th>`).join('')
+
+    const bodyRows = filtered.map((r, i) => {
+      const cols = [
+        i+1+'.',
+        r.appliedCourse  ?? '',
+        r.totalWeightage ?? '',
+        r.applicationID  ?? '',
+        r.candidateName  ?? '',
+        r.gender         ?? '',
+        r.dOB            ?? '',
+        r.finalCategory  ?? '',
+        r.domicileDistrict ?? '',
+        r.mobileNo       ?? '',
+        r.eMailID        ?? '',
+        // Strip HTML tags from documentsDiscrepancy for clean Excel output
+        (r.documentsDiscrepancy ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g,' ').trim(),
+      ]
+      const bg = i%2===0?'#ffffff':'#f8f9fa'
+      return `<tr>${cols.map(v => `<td style="padding:5px 8px;border:1px solid #dee2e6;background:${bg};vertical-align:top;">${v}</td>`).join('')}</tr>`
+    }).join('')
+
     const html = `
-      <html><head><meta charset='utf-8'/>
-      <style>
-        table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:9pt;}
-        th,td{border:1px solid #dee2e6;padding:5px 7px;}
-        .hdr{background:#14212e;color:white;font-weight:bold;}
-        .sub{background:#D5CEA3;font-weight:bold;text-align:center;}
-        .pr{background:#f8f9fa;font-style:italic;color:gray;font-size:8pt;}
-      </style></head><body>
-      <table>
-        <tr><td colspan="12" class="hdr" style="font-size:13pt;">List of Candidates Eligible for Counselling</td></tr>
-        <tr><td colspan="12" class="pr">Printed On: ${printedOn}</td></tr>
-        <tr><td colspan="12"></td></tr>
-        ${tableRef.current.innerHTML}
-      </table></body></html>`
-    const blob = new Blob([html], { type:'application/vnd.ms-excel;charset=utf-8;' })
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8"/>
+        <!--[if gte mso 9]>
+        <xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+          <x:Name>Eligible Candidates</x:Name>
+          <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml>
+        <![endif]-->
+        <style>
+          table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;}
+          td,th{border:1px solid #dee2e6;padding:5px 8px;}
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr><td colspan="12" style="background:#14212e;color:#fff;font-size:13pt;font-weight:bold;padding:10px 12px;border:1px solid #14212e;">
+            List of Candidates Eligible for Counselling
+          </td></tr>
+          <tr><td colspan="12" style="color:#666;font-style:italic;font-size:9pt;padding:4px 8px;">
+            Printed On: ${printedOn} | Total Records: ${filtered.length}
+          </td></tr>
+          <tr><td colspan="12" style="padding:3px;border:none;"></td></tr>
+          <tr>${hdr}</tr>
+          ${bodyRows}
+        </table>
+      </body></html>`
+
+    // Use Blob with BOM for proper Excel UTF-8 encoding
+    const bom  = '\uFEFF'
+    const blob = new Blob([bom + html], { type:'application/vnd.ms-excel;charset=utf-8;' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = 'CandidatesEligibleForCounselling.xls'; a.click()
+    a.href = url
+    a.download = 'CandidatesEligibleForCounselling.xls'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
@@ -190,16 +235,16 @@ export default function CandidatesEligibleForCounselling() {
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12.5, tableLayout:'fixed' }}>
                   <colgroup>
                     <col style={{ width:'4%'  }} />
-                    <col style={{ width:'11%' }} />
+                    <col style={{ width:'10%' }} />
                     <col style={{ width:'5%'  }} />
                     <col style={{ width:'10%' }} />
-                    <col style={{ width:'16%' }} />
+                    <col style={{ width:'14%' }} />
                     <col style={{ width:'5%'  }} />
                     <col style={{ width:'8%'  }} />
                     <col style={{ width:'6%'  }} />
                     <col style={{ width:'9%'  }} />
+                    <col style={{ width:'8%'  }} />
                     <col style={{ width:'9%'  }} />
-                    <col style={{ width:'10%' }} />
                     <col />
                   </colgroup>
 
@@ -251,7 +296,8 @@ export default function CandidatesEligibleForCounselling() {
                           </td>
                           <td style={{ ...tdBase, textAlign:'center', color:C.slate }}>{row.domicileDistrict}</td>
                           <td style={{ ...tdBase, textAlign:'center', fontFamily:'monospace', fontSize:12, color:C.slate, whiteSpace:'nowrap' }}>{row.mobileNo}</td>
-                          <td style={{ ...tdBase, textAlign:'left', fontSize:12, color:C.slateLight }}>{row.eMailID}</td>
+                          <td style={{ ...tdBase, textAlign:'left', fontSize:12, color:C.slateLight, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:0 }}
+                            title={row.eMailID}>{row.eMailID}</td>
                           <td style={{ ...tdBase, textAlign:'left', fontSize:12, color:C.slate, borderRight:'none' }}
                             dangerouslySetInnerHTML={{ __html: row.documentsDiscrepancy || '—' }} />
                         </tr>
