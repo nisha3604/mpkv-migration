@@ -84,10 +84,17 @@ namespace Mpkv.Api.Services
                     PhotoPath     = row["PhotoPath"]?.ToString()    ?? string.Empty,
                     CourseID      = row["CourseID"]   != DBNull.Value ? Convert.ToInt32(row["CourseID"])   : 0,
                     DistrictID    = row["DistrictID"] != DBNull.Value ? Convert.ToInt32(row["DistrictID"]) : 0,
-                    IsAdmin       = UserTypeHelper.IsAdmin(userTypeId)
+                    IsAdmin       = UserTypeHelper.IsAdmin(userTypeId),
+                    // Capture login times from CheckUserExists result BEFORE UpdateLoginStatus
+                    // shifts CurrentLoginDateTime → LastLoginDateTime.
+                    // This gives us the genuine previous-session time at the moment of login.
+                    CurrentLoginDateTime = DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss tt"),
+                    LastLoginDateTime    = (dt.Columns.Contains("LastLoginDateTime") && row["LastLoginDateTime"] != DBNull.Value)
+                        ? (DateTime.TryParse(row["LastLoginDateTime"].ToString(), out var ldt)
+                            ? ldt.ToString("dd/MM/yyyy hh:mm:ss tt")
+                            : row["LastLoginDateTime"].ToString() ?? string.Empty)
+                        : string.Empty
                 };
-
-                // Record successful login in DB — same as old AccountWorker.UpdateLoginStatus()
                 var sessParam = new DynamicParameters();
                 sessParam.Add("@UserID",            userId);
                 sessParam.Add("@LoggedInSessionID", sessionId);

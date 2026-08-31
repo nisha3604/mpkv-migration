@@ -46,20 +46,19 @@ export default function CollegeDashboard() {
     { label:'Update Profile',       sub:'Change your account details',  icon:'fa-user-cog',  to:'/college/misc/update-profile', color:'#8b5cf6' },
   ]
 
-  // 2-column session grid — matches screenshot
   const sessionFields = [
     { label:'USER LOGIN ID',       value: data?.userLoginID       || user?.userLoginID },
     { label:'IP ADDRESS',          value: 'N/A'                                        },
     { label:'USER TYPE',           value: data?.userType          || 'College'         },
-    { label:'CURRENT LOGIN TIME',  value: data?.currentLoginDateTime                   },
+    { label:'CURRENT LOGIN TIME',  value: user?.currentLoginDateTime || data?.currentLoginDateTime || new Date().toLocaleString('en-IN') },
     { label:'USER NAME',           value: data?.userName          || user?.userName    },
     {
       label:'PREVIOUS LOGIN TIME',
-      // Show '—' only when empty/null, otherwise show the value
-      // Note: on first login both times may be same — this is DB behaviour
-      value: data?.lastLoginDateTime && data.lastLoginDateTime.length > 0
-        ? data.lastLoginDateTime
-        : '—'
+      value: (user?.lastLoginDateTime && user.lastLoginDateTime.trim().length > 0)
+        ? user.lastLoginDateTime
+        : (data?.lastLoginDateTime && data.lastLoginDateTime.trim().length > 0
+            ? data.lastLoginDateTime
+            : 'First Login')
     },
   ]
 
@@ -86,7 +85,7 @@ export default function CollegeDashboard() {
                 </span>
               </div>
               <h1 style={{ color:'#fff', fontSize:26, fontWeight:800, margin:'0 0 6px', lineHeight:1.2 }}>
-                {data?.userName || user?.userName || 'Welcome'}
+                {data?.collegeName || data?.userName || user?.userName || 'Welcome'}
               </h1>
               <p style={{ color:'#94a3b8', fontSize:13.5, margin:0 }}>
                 <i className="fas fa-id-card" style={{ marginRight:6 }} />

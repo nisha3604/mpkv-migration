@@ -22,6 +22,19 @@ export default function Home() {
   const [marqueeOn,  setMarqueeOn]  = useState(true)
   const [showPopup,  setShowPopup]  = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [langActive, setLangActive] = useState(() => {
+    try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
+  })
+
+  // Restore saved language on mount — same as PublicLayout and index.html DOMContentLoaded
+  useEffect(() => {
+    if (langActive === 'mr') {
+      setTimeout(() => {
+        const s = document.querySelector('.goog-te-combo')
+        if (s) { s.value = 'mr'; s.dispatchEvent(new Event('change')) }
+      }, 800)
+    }
+  }, [])
 
   useEffect(() => {
     homeApi.getHomeData(1)
@@ -55,6 +68,21 @@ export default function Home() {
   const announcementText = data?.announcements?.length
     ? data.announcements.map(a => a.contentType === 'T' ? a.textContent : a.title).join('  |  ')
     : 'Welcome to MPKV Candidate Portal — Online Agriculture Diploma Admissions 2026'
+
+  // Map old ASP.NET .aspx URLs returned by Menu_GetMenu SP → React routes
+  const resolveMenuUrl = (url) => {
+    if (!url) return '/'
+    const u = url.toLowerCase().replace(/\.\.\//g, '').replace(/\\/g, '/')
+    if (u.includes('public/home.aspx') || u.endsWith('home.aspx')) return '/'
+    if (u.includes('searchcollege')    || u.includes('search-college'))  return '/search-college'
+    if (u.includes('allotment'))        return '/allotment'
+    if (u.includes('about'))            return '/about'
+    if (u.includes('contact'))          return '/contact'
+    // Already a React route
+    if (url.startsWith('/') && !url.includes('.aspx')) return url
+    // Anything else — go home rather than 404
+    return '/'
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
@@ -105,28 +133,26 @@ export default function Home() {
             ) : data?.menuItems?.length ? (
               data.menuItems.map(item => (
                 <li key={item.menuId} className="relative group">
-                  <a
-                    href={item.linkUrl || '#'}
+                  <Link
+                    to={resolveMenuUrl(item.linkUrl)}
                     className="flex items-center gap-1.5 text-white text-[14px] font-medium px-4 py-3 border border-transparent hover:bg-white/10 hover:border-emerald-500 rounded-md transition-all"
-                    target={item.target || '_self'}
                   >
                     {item.linkName}
                     {item.children?.length > 0 && (
                       <i className="fas fa-chevron-down text-[10px] opacity-60" />
                     )}
-                  </a>
+                  </Link>
                   {/* Dropdown children */}
                   {item.children?.length > 0 && (
                     <div className="absolute top-full left-0 hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-xl min-w-[200px] z-50 py-1">
                       {item.children.map(child => (
-                        <a
+                        <Link
                           key={child.menuId}
-                          href={child.linkUrl}
-                          target={child.target || '_self'}
+                          to={resolveMenuUrl(child.linkUrl)}
                           className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
                         >
                           {child.linkName}
-                        </a>
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -154,8 +180,16 @@ export default function Home() {
           <div className="flex items-center gap-2 py-2">
             {/* Language toggle */}
             <div className="hidden sm:flex items-center gap-1 bg-white/10 border border-white/20 rounded-md p-1">
-              <button className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-600 text-white">EN</button>
-              <button className="text-xs font-bold px-2.5 py-1 rounded text-white/60 hover:text-white hover:bg-white/10 transition">मराठी</button>
+              <button
+                onClick={() => { setLangActive('en'); window.setLang && window.setLang('en') }}
+                className={`text-xs font-bold px-2.5 py-1 rounded transition ${langActive === 'en' ? 'bg-emerald-600 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+                EN
+              </button>
+              <button
+                onClick={() => { setLangActive('mr'); window.setLang && window.setLang('mr') }}
+                className={`text-xs font-bold px-2.5 py-1 rounded transition ${langActive === 'mr' ? 'bg-emerald-600 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+                मराठी
+              </button>
             </div>
 
             {/* Show Register + Login only when registration is open — same as old master page */}
@@ -191,10 +225,11 @@ export default function Home() {
         {mobileMenu && (
           <div className="md:hidden bg-[#1a2b3c] border-t border-white/10 px-4 py-3 space-y-1">
             {(data?.menuItems ?? []).map(item => (
-              <a key={item.menuId} href={item.linkUrl || '#'}
+              <Link key={item.menuId} to={resolveMenuUrl(item.linkUrl)}
+                onClick={() => setMobileMenu(false)}
                 className="block text-white text-sm py-2 px-3 rounded hover:bg-white/10">
                 {item.linkName}
-              </a>
+              </Link>
             ))}
             <Link to="/login" className="block text-emerald-400 text-sm py-2 px-3">Log In →</Link>
           </div>

@@ -49,7 +49,9 @@ namespace Mpkv.Api.Services
                 p2.Add("@CandidateID", candidateID);
                 var dt = _db.GetDataTable("Dashboard_GetApplicationProgress", p2);
 
-                // ── Step 3: login times — use userLoginId from JWT directly ──
+                // ── Step 3: login times ───────────────────────────────────────
+                // Always set a fallback so CurrentLoginDateTime is never blank.
+                response.CurrentLoginDateTime = DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss tt");
                 try
                 {
                     var p4 = new DynamicParameters();
@@ -60,27 +62,30 @@ namespace Mpkv.Api.Services
                     {
                         var r = loginInfoDt.Rows[0];
                         bool H(string n) => loginInfoDt.Columns.Contains(n) && r[n] != DBNull.Value;
-                        if (H("LastLoginDateTime"))
-                        {
-                            var raw = r["LastLoginDateTime"].ToString() ?? "";
-                            if (DateTime.TryParse(raw, out var lastDt))
-                                response.LastLoginDateTime = lastDt.ToString("dd/MM/yyyy hh:mm:ss tt");
-                            else
-                                response.LastLoginDateTime = raw;
-                        }
+
+                        // CurrentLoginDateTime — prefer DB value, keep DateTime.Now fallback if absent
                         if (H("CurrentLoginDateTime"))
                         {
                             var raw = r["CurrentLoginDateTime"].ToString() ?? "";
                             if (DateTime.TryParse(raw, out var curDt))
                                 response.CurrentLoginDateTime = curDt.ToString("dd/MM/yyyy hh:mm:ss tt");
-                            else
-                                response.CurrentLoginDateTime = raw;
+                        }
+
+                        // LastLoginDateTime — only set when the DB has a real previous-session value
+                        if (H("LastLoginDateTime"))
+                        {
+                            var raw = r["LastLoginDateTime"].ToString() ?? "";
+                            if (DateTime.TryParse(raw, out var lastDt))
+                                response.LastLoginDateTime = lastDt.ToString("dd/MM/yyyy hh:mm:ss tt");
+                            else if (!string.IsNullOrWhiteSpace(raw))
+                                response.LastLoginDateTime = raw;
                         }
                     }
                 }
                 catch (Exception loginEx)
                 {
-                    Console.WriteLine($"[GetDashboard] Login times error: {loginEx.Message}");
+                    // Non-critical — log but do not break the dashboard
+                    Console.WriteLine($"[GetDashboard] Login times SP error: {loginEx.Message}");
                 }
 
                 var progress = new ApplicationProgressResponse();

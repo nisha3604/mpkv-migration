@@ -49,6 +49,42 @@ namespace Mpkv.Api.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        // GET /api/college/debug-login-time  — TEMPORARY: shows raw SP output for login time diagnosis
+        [HttpGet("debug-login-time")]
+        public IActionResult DebugLoginTime()
+        {
+            try
+            {
+                var p = new Dapper.DynamicParameters();
+                p.Add("@UserTypeID",  GetUserTypeId());
+                p.Add("@UserLoginID", GetLoginId());
+
+                // Use reflection to access _db from dashboard service — instead inject DbAccess directly
+                var dbField = _dashboardService.GetType()
+                    .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var db = dbField?.GetValue(_dashboardService) as Mpkv.Api.Data.DbAccess;
+
+                if (db == null)
+                    return Ok(new { error = "Could not access DbAccess", userTypeId = GetUserTypeId(), loginId = GetLoginId() });
+
+                var dt = db.GetDataTable("Account_GetLoggedInUserDetails", p);
+
+                if (dt == null || dt.Rows.Count == 0)
+                    return Ok(new { rowCount = 0, columns = new string[0], userTypeId = GetUserTypeId(), loginId = GetLoginId(), message = "SP returned no rows" });
+
+                var columns = dt.Columns.Cast<System.Data.DataColumn>().Select(c => c.ColumnName).ToList();
+                var rows    = dt.Rows.Cast<System.Data.DataRow>()
+                    .Select(r => columns.ToDictionary(c => c, c => r[c]?.ToString() ?? "(null)"))
+                    .ToList();
+
+                return Ok(new { rowCount = dt.Rows.Count, columns, rows, userTypeId = GetUserTypeId(), loginId = GetLoginId() });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { error = ex.Message, userTypeId = GetUserTypeId(), loginId = GetLoginId() });
+            }
+        }
+
         // GET /api/college/summary?collegeId=
         [HttpGet("summary")]
         public IActionResult GetSummary([FromQuery] long? collegeId = null)

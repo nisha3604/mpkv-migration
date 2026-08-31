@@ -11,6 +11,8 @@ namespace Mpkv.Api.Models.College
         public int    Intake   { get; set; }
         public int    Admitted { get; set; }
         public int    Vacancy  { get; set; }
+        // College identity — shown in hero banner
+        public string CollegeName { get; set; } = string.Empty;
         // Session info shown on dashboard (from Account_GetLoggedInUserDetails)
         public string UserLoginID          { get; set; } = string.Empty;
         public string UserType             { get; set; } = string.Empty;

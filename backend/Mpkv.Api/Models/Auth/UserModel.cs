@@ -17,5 +17,12 @@ namespace Mpkv.Api.Models.Auth
         public int    CourseID     { get; set; }
         public int    DistrictID   { get; set; }
         public bool   IsAdmin      { get; set; }
+        /// <summary>
+        /// Captured from Account_CheckUserExists BEFORE UpdateLoginStatus runs.
+        /// This is the genuine previous-session login time shown on the dashboard.
+        /// </summary>
+        public string LastLoginDateTime    { get; set; } = string.Empty;
+        /// <summary>Set to DateTime.Now at login time — shown as Current Login Time.</summary>
+        public string CurrentLoginDateTime { get; set; } = string.Empty;
     }
 }
