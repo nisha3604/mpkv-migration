@@ -22,6 +22,7 @@ namespace Mpkv.Api.Controllers
         private int    GetUserTypeId()  => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
         private string GetLoginId()     => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
         private string GetIp()          => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+        private long   GetCandidateId() => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0", out var id) ? id : 0;
 
         // GET /api/admission/phases
         // Returns phase dropdown + current phase ID
@@ -62,6 +63,41 @@ namespace Mpkv.Api.Controllers
             if (request == null || request.CandidateID <= 0)
                 return BadRequest(new RefusalFeeInitiateResponse { Success = false, Message = "Invalid request." });
             var result = _allotmentService.InitiateRefusalFee(request.CandidateID, request.PhaseID, request.PaymentGatewayID, GetLoginId(), GetIp());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // ── Allotment Summary ─────────────────────────────────────────────────
+        // GET /api/admission/allotment-summary
+        // Mirrors: AllotmentSummary.aspx — auto-loads for candidate (UserTypeID=91)
+        [HttpGet("allotment-summary")]
+        public IActionResult GetAllotmentSummary()
+        {
+            var candidateId = GetCandidateId();
+            if (candidateId <= 0) return Unauthorized();
+            var result = _allotmentService.GetAllotmentSummary(candidateId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // ── Category Conversion Fee ───────────────────────────────────────────
+        // GET  /api/admission/category-conversion-fee
+        // POST /api/admission/category-conversion-fee/initiate
+        [HttpGet("category-conversion-fee")]
+        public IActionResult GetCategoryConversionFee()
+        {
+            var candidateId = GetCandidateId();
+            if (candidateId <= 0) return Unauthorized();
+            var result = _allotmentService.GetCategoryConversionFeeDetails(candidateId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("category-conversion-fee/initiate")]
+        public IActionResult InitiateCategoryConversionFee([FromBody] RefusalFeeInitiateRequest? request)
+        {
+            if (request == null || request.PhaseID <= 0 || request.PaymentGatewayID <= 0)
+                return BadRequest(new RefusalFeeInitiateResponse { Success = false, Message = "Invalid request." });
+            var candidateId = GetCandidateId();
+            if (candidateId <= 0) return Unauthorized();
+            var result = _allotmentService.InitiateCategoryConversionFee(candidateId, request.PhaseID, request.PaymentGatewayID, GetLoginId(), GetIp());
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

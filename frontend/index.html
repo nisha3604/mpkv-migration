@@ -6,9 +6,78 @@
     <title>MPKV Diploma Portal</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Google Translate — same as old project MasterPageWithSession.Master -->
+    <style>
+      /* Hide ALL Google Translate UI — toolbar, banner, spinner, logo, everything */
+      .goog-te-banner-frame,
+      .skiptranslate,
+      .goog-te-spinner-pos,
+      .goog-te-spinner,
+      #goog-gt-tt,
+      .goog-te-balloon-frame,
+      div[id^="goog-gt-"],
+      .VIpgJd-ZVi9od-aZ2wEe,
+      .VIpgJd-ZVi9od-aZ2wEe-OiiCO { display: none !important; visibility: hidden !important; }
+      body { top: 0 !important; }
+      #google_translate_element { display: none !important; }
+      .goog-text-highlight { background: none !important; box-shadow: none !important; }
+      /* Hide the loading overlay that flashes during page navigation */
+      .VIpgJd-ZVi9od-ORHb { display: none !important; }
+    </style>
+
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,mr',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+
+      // setLang — called by EN / मराठी buttons in Navbar and CollegeLayout
+      // Exact same logic as old project's setLang() in MasterPageWithSession.Master
+      window.setLang = function(lang) {
+        if (lang === 'en') {
+          // Revert to English: delete googtrans cookie and reload
+          try { localStorage.setItem('mpkv_lang', 'en'); } catch(e) {}
+          var exp = new Date();
+          exp.setTime(exp.getTime() - 86400000);
+          document.cookie = 'googtrans=; expires=' + exp.toUTCString() + '; path=/';
+          document.cookie = 'googtrans=; expires=' + exp.toUTCString() + '; domain=' + location.hostname + '; path=/';
+          location.reload();
+          return;
+        }
+        // Switch to Marathi
+        var selectEl = document.querySelector('.goog-te-combo');
+        if (selectEl) {
+          selectEl.value = 'mr';
+          selectEl.dispatchEvent(new Event('change'));
+        }
+        try { localStorage.setItem('mpkv_lang', lang); } catch(e) {}
+      };
+
+      // Restore saved language preference on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        var saved = '';
+        try { saved = localStorage.getItem('mpkv_lang'); } catch(e) {}
+        if (saved === 'mr') {
+          setTimeout(function() {
+            var s = document.querySelector('.goog-te-combo');
+            if (s) { s.value = 'mr'; s.dispatchEvent(new Event('change')); }
+          }, 800);
+        }
+      });
+    </script>
   </head>
   <body>
+    <!-- Hidden Google Translate widget element -->
+    <div id="google_translate_element"></div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Load Google Translate script — same as old project -->
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </body>
 </html>

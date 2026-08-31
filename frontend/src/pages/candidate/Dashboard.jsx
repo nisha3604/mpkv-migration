@@ -170,12 +170,12 @@ export default function Dashboard() {
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'User Login ID',      value: user?.userLoginID },
-                { label: 'IP Address',         value: 'N/A' },
-                { label: 'User Type',          value: 'Candidate' },
-                { label: 'Current Login Time', value: new Date().toLocaleString('en-IN') },
-                { label: 'User Name',          value: user?.userName },
-                { label: 'Previous Login Time',value: '—' },
+                { label: 'User Login ID',       value: user?.userLoginID },
+                { label: 'IP Address',          value: 'N/A' },
+                { label: 'User Type',           value: 'Candidate' },
+                { label: 'Current Login Time',  value: data?.currentLoginDateTime || new Date().toLocaleString('en-IN') },
+                { label: 'User Name',           value: user?.userName },
+                { label: 'Previous Login Time', value: data?.lastLoginDateTime || '—' },
               ].map((item, i) => (
                 <div key={i} className="card px-4 py-3 shadow-sm">
                   <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">

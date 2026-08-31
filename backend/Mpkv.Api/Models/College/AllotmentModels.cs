@@ -120,3 +120,50 @@ namespace Mpkv.Api.Models.College
         public string PaymentGatewayURL { get; set; } = string.Empty;
     }
 }
+
+// ── Allotment Summary ─────────────────────────────────────────────────────────
+public class AllotmentSummaryRow
+{
+    public string PhaseID          { get; set; } = "";
+    public string Phase            { get; set; } = "";
+    public string CollegeID        { get; set; } = "";
+    public string College          { get; set; } = "";
+    public string CollegeCode      { get; set; } = "";
+    public string Course           { get; set; } = "";
+    public string AllottedCategory { get; set; } = "";
+    public string AllottedType     { get; set; } = "";
+    public string AdmissionStatus  { get; set; } = "";
+    public string AllotmentDate    { get; set; } = "";
+}
+public class AllotmentSummaryResponse
+{
+    public bool   Success       { get; set; }
+    public string Message       { get; set; } = "";
+    public string ApplicationID { get; set; } = "";
+    public string CandidateName { get; set; } = "";
+    public List<AllotmentSummaryRow> Allotments { get; set; } = new();
+}
+
+// ── Category Conversion Fee ───────────────────────────────────────────────────
+public class CategoryConversionFeeResponse
+{
+    public bool   Success        { get; set; }
+    public string Message        { get; set; } = "";
+    public string CandidateName  { get; set; } = "";
+    public string AppliedCourse  { get; set; } = "";
+    public string Gender         { get; set; } = "";
+    public string Category       { get; set; } = "";
+    public string IsPWD          { get; set; } = "";
+    public int    FeeToBePaid    { get; set; }
+    public int    FeeAlreadyPaid { get; set; }
+    public int    RemainingFee   { get; set; }
+    public string Purpose        { get; set; } = "";
+    public int    PhaseID        { get; set; }
+    public List<PaymentGatewayItem> PaymentGateways { get; set; } = new();
+}
+
+public class PaymentGatewayItem
+{
+    public string Value { get; set; } = "";
+    public string Text  { get; set; } = "";
+}

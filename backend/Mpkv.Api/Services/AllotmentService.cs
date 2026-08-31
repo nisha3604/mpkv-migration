@@ -10,6 +10,10 @@ namespace Mpkv.Api.Services
         AllotmentStatusResponse    GetAllotmentStatus(string applicationId, short phaseId, int userTypeId, string userLoginId);
         DownloadAllotmentLetterResponse SaveDownloadStatus(long candidateId, long collegeId, short phaseId, string userLoginId, string ipAddress);
         RefusalFeeInitiateResponse InitiateRefusalFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress);
+        // New — Allotment Summary + Category Conversion Fee
+        AllotmentSummaryResponse       GetAllotmentSummary(long candidateId);
+        CategoryConversionFeeResponse  GetCategoryConversionFeeDetails(long candidateId);
+        RefusalFeeInitiateResponse     InitiateCategoryConversionFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress);
     }
 
     /// <summary>
@@ -288,5 +292,115 @@ namespace Mpkv.Api.Services
                 return new RefusalFeeInitiateResponse { Success = false, Message = ex.Message };
             }
         }
+        // ══════════════════════════════════════════════════════════════════════
+        // GET ALLOTMENT SUMMARY
+        // GET /api/admission/allotment-summary
+        // Mirrors: AllotmentSummary.aspx GetAllotmentSummary()
+        // SP: Admission_GetAllotmentSummary(@CandidateID) — Table0=candidate info, Table1=allotments
+        // ══════════════════════════════════════════════════════════════════════
+        public AllotmentSummaryResponse GetAllotmentSummary(long candidateId)
+        {
+            var r = new AllotmentSummaryResponse();
+            try
+            {
+                var p = new Dapper.DynamicParameters();
+                p.Add("@CandidateID", candidateId);
+                var ds = _db.GetDataSet("Admission_GetAllotmentSummary", p);
+                if (ds == null) return r;
+
+                if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                {
+                    var row = ds.Tables[0].Rows[0];
+                    r.ApplicationID   = row["ApplicationID"]?.ToString() ?? "";
+                    r.CandidateName   = row["CandidateName"]?.ToString() ?? "";
+                }
+
+                if (ds.Tables.Count > 1)
+                    foreach (System.Data.DataRow row in ds.Tables[1].Rows)
+                    {
+                        bool HC(string n) => ds.Tables[1].Columns.Contains(n);
+                        r.Allotments.Add(new AllotmentSummaryRow
+                        {
+                            PhaseID             = HC("PhaseID")             ? row["PhaseID"]?.ToString()             ?? "" : "",
+                            Phase               = HC("Phase")               ? row["Phase"]?.ToString()               ?? "" : "",
+                            CollegeID           = HC("CollegeID")           ? row["CollegeID"]?.ToString()           ?? "" : "",
+                            College             = HC("College")             ? row["College"]?.ToString()             ?? "" : "",
+                            CollegeCode         = HC("CollegeCode")         ? row["CollegeCode"]?.ToString()         ?? "" : "",
+                            Course              = HC("Course")              ? row["Course"]?.ToString()              ?? "" : "",
+                            AllottedCategory    = HC("AllottedCategory")    ? row["AllottedCategory"]?.ToString()    ?? "" : "",
+                            AllottedType        = HC("AllottedType")        ? row["AllottedType"]?.ToString()        ?? "" : "",
+                            AdmissionStatus     = HC("AdmissionStatus")     ? row["AdmissionStatus"]?.ToString()     ?? "" : "",
+                            AllotmentDate       = HC("AllotmentDate")       ? row["AllotmentDate"]?.ToString()       ?? "" : "",
+                        });
+                    }
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Message = ex.Message; Console.WriteLine($"[GetAllotmentSummary] {ex.Message}"); }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GET CATEGORY CONVERSION FEE DETAILS
+        // GET /api/admission/category-conversion-fee
+        // Mirrors: PayCategoryConversionFee.aspx GetCategoryConversionFee()
+        // SP: Admission_GetCategoryConversionFeeDetails(@CandidateID)
+        // ══════════════════════════════════════════════════════════════════════
+        public CategoryConversionFeeResponse GetCategoryConversionFeeDetails(long candidateId)
+        {
+            var r = new CategoryConversionFeeResponse();
+            try
+            {
+                var p = new Dapper.DynamicParameters();
+                p.Add("@CandidateID", candidateId);
+                var dt = _db.GetDataTable("Admission_GetCategoryConversionFeeDetails", p);
+                if (dt == null || dt.Rows.Count == 0) return r;
+                var row = dt.Rows[0];
+                bool H(string n) => dt.Columns.Contains(n) && row[n] != System.DBNull.Value;
+                r.CandidateName   = H("CandidateName")   ? row["CandidateName"]?.ToString()   ?? "" : "";
+                r.AppliedCourse   = H("AppliedCourse")   ? row["AppliedCourse"]?.ToString()   ?? "" : "";
+                r.Gender          = H("Gender")          ? row["Gender"]?.ToString()          ?? "" : "";
+                r.Category        = H("Category")        ? row["Category"]?.ToString()        ?? "" : "";
+                r.IsPWD           = H("IsPWD")           ? row["IsPWD"]?.ToString()           ?? "" : "";
+                r.FeeToBePaid     = H("FeeToBePaid")     ? Convert.ToInt32(row["FeeToBePaid"])     : 0;
+                r.FeeAlreadyPaid  = H("FeeAlreadyPaid")  ? Convert.ToInt32(row["FeeAlreadyPaid"])  : 0;
+                r.RemainingFee    = H("RemainingFee")    ? Convert.ToInt32(row["RemainingFee"])    : 0;
+                r.Purpose         = H("Purpose")         ? row["Purpose"]?.ToString()         ?? "" : "";
+                r.PhaseID         = H("PhaseID")         ? Convert.ToInt32(row["PhaseID"])        : 0;
+
+                // Load payment gateways from Master_PaymentGateway
+                // Same as old project: Global.MasterPaymentGateway = objBase.GetMasterTableList("Master_PaymentGateway", ...)
+                try
+                {
+                    var gwParam = new Dapper.DynamicParameters();
+                    gwParam.Add("@TableName",        "Master_PaymentGateway");
+                    gwParam.Add("@DataValueField",   "PaymentGatewayID");
+                    gwParam.Add("@DataTextField",    "PaymentGateway");
+                    gwParam.Add("@ParentField",      "");
+                    gwParam.Add("@ParentFieldValue", "");
+                    gwParam.Add("@OrderByFields",    "PaymentGatewayID");
+                    var gwDt = _db.GetDataTable("Base_GetMasterTableList", gwParam);
+                    if (gwDt != null)
+                        foreach (System.Data.DataRow gwRow in gwDt.Rows)
+                        {
+                            var val = gwRow[0]?.ToString() ?? "";
+                            if (val != "-1")
+                                r.PaymentGateways.Add(new PaymentGatewayItem { Value = val, Text = gwRow[1]?.ToString() ?? "" });
+                        }
+                }
+                catch { /* use empty gateways */ }
+
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Message = ex.Message; Console.WriteLine($"[GetCategoryConversionFeeDetails] {ex.Message}"); }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // INITIATE CATEGORY CONVERSION FEE PAYMENT
+        // POST /api/admission/category-conversion-fee/initiate
+        // Same as InitiateRefusalFee — reuses Fee_SetFeeTransaction SP
+        // ══════════════════════════════════════════════════════════════════════
+        public RefusalFeeInitiateResponse InitiateCategoryConversionFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress)
+            => InitiateRefusalFee(candidateId, phaseId, paymentGatewayId, userLoginId, ipAddress);
     }
 }

@@ -169,11 +169,14 @@ export const adminCollegeApi = {
 
 // ── Admission / Allotment ─────────────────────────────────────────────────────
 export const admissionApi = {
-  getPhases          : ()     => api.get('/admission/phases'),
-  checkAllotment     : (data) => api.post('/admission/allotment-status', data),
-  downloadLetter     : (data) => api.post('/admission/download-allotment-letter', data),
-  payRefusalFee      : (data) => api.post('/admission/refusal-fee', data),
-  checkApplicationID : (data) => api.post('/admission/check-application-id', data),
+  getPhases                    : ()     => api.get('/admission/phases'),
+  checkAllotment               : (data) => api.post('/admission/allotment-status', data),
+  downloadLetter               : (data) => api.post('/admission/download-allotment-letter', data),
+  payRefusalFee                : (data) => api.post('/admission/refusal-fee', data),
+  checkApplicationID           : (data) => api.post('/admission/check-application-id', data),
+  getAllotmentSummary           : ()     => api.get('/admission/allotment-summary'),
+  getCategoryConversionFee     : ()     => api.get('/admission/category-conversion-fee'),
+  initiateCategoryConversionFee: (data) => api.post('/admission/category-conversion-fee/initiate', data),
 }
 
 // ── Counselling (Spot Round) ──────────────────────────────────────────────────

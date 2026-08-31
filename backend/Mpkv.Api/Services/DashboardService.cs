@@ -6,7 +6,7 @@ namespace Mpkv.Api.Services
 {
     public interface IDashboardService
     {
-        CandidateDashboardResponse GetDashboard(long candidateID);
+        CandidateDashboardResponse GetDashboard(long candidateID, string userLoginId);
     }
 
     public class DashboardService : IDashboardService
@@ -21,7 +21,7 @@ namespace Mpkv.Api.Services
         // Step 2: Dashboard_GetApplicationProgress → all step completion flags
         //         (SP must exist — see SQL script in project root)
         // ══════════════════════════════════════════════════════════════════════
-        public CandidateDashboardResponse GetDashboard(long candidateID)
+        public CandidateDashboardResponse GetDashboard(long candidateID, string userLoginId)
         {
             var response = new CandidateDashboardResponse();
             try
@@ -48,6 +48,40 @@ namespace Mpkv.Api.Services
                 var p2 = new DynamicParameters();
                 p2.Add("@CandidateID", candidateID);
                 var dt = _db.GetDataTable("Dashboard_GetApplicationProgress", p2);
+
+                // ── Step 3: login times — use userLoginId from JWT directly ──
+                try
+                {
+                    var p4 = new DynamicParameters();
+                    p4.Add("@UserTypeID",  91);
+                    p4.Add("@UserLoginID", userLoginId);
+                    var loginInfoDt = _db.GetDataTable("Account_GetLoggedInUserDetails", p4);
+                    if (loginInfoDt != null && loginInfoDt.Rows.Count > 0)
+                    {
+                        var r = loginInfoDt.Rows[0];
+                        bool H(string n) => loginInfoDt.Columns.Contains(n) && r[n] != DBNull.Value;
+                        if (H("LastLoginDateTime"))
+                        {
+                            var raw = r["LastLoginDateTime"].ToString() ?? "";
+                            if (DateTime.TryParse(raw, out var lastDt))
+                                response.LastLoginDateTime = lastDt.ToString("dd/MM/yyyy hh:mm:ss tt");
+                            else
+                                response.LastLoginDateTime = raw;
+                        }
+                        if (H("CurrentLoginDateTime"))
+                        {
+                            var raw = r["CurrentLoginDateTime"].ToString() ?? "";
+                            if (DateTime.TryParse(raw, out var curDt))
+                                response.CurrentLoginDateTime = curDt.ToString("dd/MM/yyyy hh:mm:ss tt");
+                            else
+                                response.CurrentLoginDateTime = raw;
+                        }
+                    }
+                }
+                catch (Exception loginEx)
+                {
+                    Console.WriteLine($"[GetDashboard] Login times error: {loginEx.Message}");
+                }
 
                 var progress = new ApplicationProgressResponse();
                 progress.Registration = true;

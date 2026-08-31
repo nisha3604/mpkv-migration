@@ -52,7 +52,9 @@ export default function Navbar() {
   const { user, logout, isLoggedIn, updateUser } = useAuth()
   const location = useLocation()
 
-  const [langActive,      setLangActive]     = useState('en')
+  const [langActive,      setLangActive]     = useState(() => {
+    try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
+  })
   const [openDropdown,    setOpenDropdown]   = useState(null)
   const [mobileOpen,      setMobileOpen]     = useState(false)
   const [mobileExpand,    setMobileExpand]   = useState(null)
@@ -116,11 +118,9 @@ export default function Navbar() {
       key: 'allotment',
       label: 'Allotment / Admission Menu',
       items: [
-        { label: 'Check Allotment Status',   to: '/candidate/allotment-status'   },
-        { label: 'Confirm Admission',         to: '/candidate/confirm-admission'  },
-        { label: 'Cancel Admission',          to: '/candidate/cancel-admission'   },
-        { label: 'Allotment Summary',         to: '/candidate/allotment-summary'  },
-        { label: 'Admission Letter',          to: '/candidate/admission-letter'   },
+        { label: 'Pay Category Conversion Fee',  to: '/admission/pay-category-fee'    },
+        { label: 'Check Allotment Status',        to: '/admission/allotment-status'    },
+        { label: 'Allotment / Admission Summary', to: '/admission/allotment-summary'   },
       ]
     },
     {
@@ -365,7 +365,7 @@ export default function Navbar() {
             borderRadius: 6, padding: 3
           }}>
             <button
-              onClick={() => setLangActive('en')}
+              onClick={() => { setLangActive('en'); window.setLang && window.setLang('en') }}
               style={{
                 background: langActive === 'en' ? '#059669' : 'transparent',
                 border: 'none', color: langActive === 'en' ? '#fff' : 'rgba(255,255,255,0.75)',
@@ -374,7 +374,7 @@ export default function Navbar() {
               }}
             >EN</button>
             <button
-              onClick={() => setLangActive('mr')}
+              onClick={() => { setLangActive('mr'); window.setLang && window.setLang('mr') }}
               style={{
                 background: langActive === 'mr' ? '#059669' : 'transparent',
                 border: 'none', color: langActive === 'mr' ? '#fff' : 'rgba(255,255,255,0.75)',
