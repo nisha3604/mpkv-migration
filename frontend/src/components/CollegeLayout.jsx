@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-/**
- * CollegeLayout — used by all college (UserTypeID=61) and admin (11/12) pages.
- * Mirrors the same header+navbar design as CandidateLayout/Navbar.jsx.
- */
 export default function CollegeLayout({ children }) {
   const { user, logout, isAdmin } = useAuth()
   const navigate                  = useNavigate()
-  const [showLogout, setShowLogout]       = useState(false)
-  const [mobileOpen, setMobileOpen]       = useState(false)
-  const [langActive, setLangActive]       = useState('en')
+  const [showLogout,    setShowLogout]    = useState(false)
+  const [showProfile,   setShowProfile]   = useState(false)
+  const [mobileOpen,    setMobileOpen]    = useState(false)
+  const [langActive,    setLangActive]    = useState(() => {
+    try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
+  })
+  const profileRef = useRef(null)
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handler = e => { if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -52,9 +58,9 @@ export default function CollegeLayout({ children }) {
           ]
         },
         { label: 'Miscellaneous', to: null, children: [
-            { label: 'Update Profile',           to: '/college/misc/update-profile'    },
-            { label: 'Change Security Question', to: '/college/misc/security-question' },
-            { label: 'Change Password',          to: '/college/misc/change-password'   },
+            { label: 'Update Profile',           to: '/college/misc/update-profile'        },
+            { label: 'Change Security Question', to: '/college/misc/security-question'     },
+            { label: 'Change Password',          to: '/college/misc/change-password'       },
           ]
         },
       ]
@@ -78,31 +84,38 @@ export default function CollegeLayout({ children }) {
             </div>
           </div>
 
-          {/* Right: user info + ADMISSIONS badge */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f0fdfa', color: '#115e59', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 9999, border: '1px solid #ccfbf1' }}>
-              <i className="fas fa-graduation-cap" /> ADMISSIONS PORTAL
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* User photo */}
-              <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', border: '2px solid #e2e8f0', background: '#f1f5f9', flexShrink: 0 }}>
-                {user?.photoPath
-                  ? <img src={user.photoPath.startsWith('http') ? user.photoPath : `http://localhost:7002${user.photoPath}`}
-                      alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className="fas fa-user" style={{ color: '#94a3b8', fontSize: 16 }} />
-                    </div>
-                }
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.userName || 'User'}
+          {/* Right: clickable profile image only */}
+          <div ref={profileRef} style={{ position: 'relative' }}>
+            <img
+              src="/dummy-user.png"
+              alt="Profile"
+              onClick={() => setShowProfile(p => !p)}
+              style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid #e2e8f0', objectFit: 'cover', cursor: 'pointer', display: 'block' }}
+              onError={e => { e.currentTarget.src = '/dummy-user.png' }}
+            />
+
+            {/* Dropdown */}
+            {showProfile && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
+                background: '#fff', border: '1px solid #e2e8f0',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                minWidth: 200, overflow: 'hidden'
+              }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>Logged in as</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{user?.userLoginID}</div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{isAdmin ? 'Administrator' : `College · ${user?.userLoginID}`}</div>
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>
-                  {isAdmin ? 'Administrator' : 'College'} · {user?.userLoginID}
-                </div>
+                <button
+                  onClick={() => { setShowProfile(false); setShowLogout(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, color: '#ef4444', fontWeight: 600, textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#fef2f2'}
+                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <i className="fas fa-sign-out-alt" style={{ fontSize: 13 }}/> Sign Out
+                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </header>
@@ -126,11 +139,11 @@ export default function CollegeLayout({ children }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {/* Language toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 6, padding: 3 }}>
-            <button onClick={() => setLangActive('en')}
+            <button onClick={() => { setLangActive('en'); window.setLang && window.setLang('en') }}
               style={{ background: langActive === 'en' ? '#059669' : 'transparent', border: 'none', color: langActive === 'en' ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 600, padding: '5px 11px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit' }}>
               EN
             </button>
-            <button onClick={() => setLangActive('mr')}
+            <button onClick={() => { setLangActive('mr'); window.setLang && window.setLang('mr') }}
               style={{ background: langActive === 'mr' ? '#059669' : 'transparent', border: 'none', color: langActive === 'mr' ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 600, padding: '5px 11px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit' }}>
               मराठी
             </button>

@@ -49,22 +49,52 @@ export default function CompositeAdmissionReportByCourse() {
     if (!tableRef.current) return
     const now       = new Date()
     const printedOn = now.toLocaleString('en-IN')
+
+    // Count actual columns from first header row
+    const firstRow = tableRef.current.querySelector('tr')
+    let colCount = 0
+    if (firstRow) {
+      firstRow.querySelectorAll('th,td').forEach(cell => {
+        colCount += parseInt(cell.getAttribute('colspan') || '1')
+      })
+    }
+    if (colCount === 0) colCount = 20
+
+    let tableHtml = tableRef.current.innerHTML
+    tableHtml = tableHtml.replace(/rgba\([^)]+\)/g, '#cccccc')
+    // Remove background from <tr> — Excel extends it beyond table width into empty cols
+    tableHtml = tableHtml.replace(/<tr([^>]*?)style="([^"]*)"([^>]*?)>/g, (match, pre, style, post) => {
+      const cleaned = style.replace(/background(-color)?:[^;]+;?/gi, '').trim()
+      return cleaned ? `<tr${pre}style="${cleaned}"${post}>` : `<tr${pre}${post}>`
+    })
+    // Force correct background+color on every <th> by replacing inline style
+    // Excel ignores stylesheet !important — must be inline on each element
+    tableHtml = tableHtml.replace(
+      /<th([^>]*?)style="([^"]*)"([^>]*?)>/g,
+      (match, pre, style, post) => {
+        // Remove existing background and color from inline style
+        let cleaned = style
+          .replace(/background(-color)?:[^;]+;?/gi, '')
+          .replace(/color:[^;]+;?/gi, '')
+          .trim()
+        return `<th${pre}style="${cleaned};background:#14212e;color:#ffffff;"${post}>`
+      }
+    )
+
     const html = `
       <html><head><meta charset='utf-8'/>
       <style>
         table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;}
         th,td{border:1px solid #ccc;padding:5px 8px;}
-        .h1{background:#14212e;color:white;font-weight:bold;font-size:13pt;}
-        .h2{background:#1e3a5f;color:white;font-weight:bold;}
+        th{background:#14212e !important;color:#ffffff !important;font-weight:bold;}
         .footer{background:#D5CEA3;font-weight:bold;}
-        .subh{background:#f8fafc;font-weight:bold;color:#14212e;}
       </style></head><body>
       <table>
-        <tr><td colspan="50" class="h1">Composite Admission Report</td></tr>
-        ${report?.collegeName ? `<tr><td colspan="50" class="h2">${report.collegeName}</td></tr>` : ''}
-        <tr><td colspan="50" style="font-style:italic;color:gray;font-size:9pt;">Printed On: ${printedOn}</td></tr>
-        <tr><td colspan="50"></td></tr>
-        ${tableRef.current.innerHTML}
+        <tr><td colspan="${colCount}" style="background:#14212e;color:#ffffff;font-weight:bold;font-size:13pt;padding:8px;">Composite Admission Report</td></tr>
+        ${report?.collegeName ? `<tr><td colspan="${colCount}" style="background:#1e3a5f;color:#ffffff;font-weight:bold;padding:6px;">${report.collegeName}</td></tr>` : ''}
+        <tr><td colspan="${colCount}" style="font-style:italic;color:gray;font-size:9pt;padding:4px;">Printed On: ${printedOn}</td></tr>
+        <tr><td colspan="${colCount}"></td></tr>
+        ${tableHtml}
       </table></body></html>`
     const blob = new Blob([html], { type:'application/vnd.ms-excel;charset=utf-8;' })
     const url  = URL.createObjectURL(blob)

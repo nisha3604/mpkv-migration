@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+  import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { reportApi } from '../../services/api'
@@ -53,31 +53,46 @@ export default function AllotmentReportByCourse() {
     finally { setReporting(false) }
   }
 
-  // Excel export — proper XLS with metadata
   const handleExport = () => {
     if (!tableRef.current) return
     const printedOn = new Date().toLocaleString('en-IN')
-    const metaRows  = `
-      <tr><td colspan="8" style="font-weight:bold;font-size:14pt;background:#14212e;color:white;">Allotment Report — ${phaseName}</td></tr>
-      ${report?.collegeName ? `<tr><td colspan="8">${report.collegeName}</td></tr>` : ''}
-      <tr><td colspan="8" style="font-style:italic;color:gray;">Printed On: ${printedOn}</td></tr>
-      <tr><td colspan="8"></td></tr>
-    `
+    let tableHtml = tableRef.current.innerHTML
+    tableHtml = tableHtml.replace(/rgba\([^)]+\)/g, '#cccccc')
+    // Remove background from <tr> — Excel extends it beyond table width into empty cols
+    tableHtml = tableHtml.replace(/<tr([^>]*?)style="([^"]*)"([^>]*?)>/g, (match, pre, style, post) => {
+      const cleaned = style.replace(/background(-color)?:[^;]+;?/gi, '').trim()
+      return cleaned ? `<tr${pre}style="${cleaned}"${post}>` : `<tr${pre}${post}>`
+    })
+    tableHtml = tableHtml.replace(
+      /<th([^>]*?)style="([^"]*)"([^>]*?)>/g,
+      (match, pre, style, post) => {
+        let cleaned = style
+          .replace(/background(-color)?:[^;]+;?/gi, '')
+          .replace(/color:[^;]+;?/gi, '')
+          .trim()
+        return `<th${pre}style="${cleaned};background:#14212e;color:#ffffff;"${post}>`
+      }
+    )
     const html = `
       <html><head><meta charset='utf-8'/>
       <style>
-        table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt;}
+        table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt;width:100%;}
         th,td{border:1px solid #dee2e6;padding:6px 10px;}
-        th{background:#14212e;color:white;font-weight:bold;}
-        .footer{background:#D5CEA3;font-weight:bold;}
+        th{background:#14212e;color:#ffffff;font-weight:bold;}
+        .footer-row{background:#D5CEA3;font-weight:bold;}
       </style>
       </head><body>
-      <table>${metaRows}${tableRef.current.innerHTML}</table>
+      <p style="font-weight:bold;font-size:14pt;">Allotment Report — ${phaseName}</p>
+      ${report?.collegeName ? `<p style="font-weight:600;">${report.collegeName}</p>` : ''}
+      <p style="font-style:italic;color:gray;">Printed On: ${printedOn}</p>
+      <table>${tableHtml}</table>
       </body></html>`
     const blob = new Blob([html], { type:'application/vnd.ms-excel;charset=utf-8;' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = `AllotmentReport_${phaseName.replace(/\s+/g,'_')}.xls`; a.click()
+    a.href = url
+    a.download = `AllotmentReport_${phaseName.replace(/\s+/g,'_')}.xls`
+    a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -196,8 +211,8 @@ export default function AllotmentReportByCourse() {
             </div>
           ) : report ? (
             <div style={{ overflowX:'auto' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-                <thead ref={tableRef}>
+              <table ref={tableRef} style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                <thead>
                   <tr style={{ background:C.navy }}>
                     <th style={{ ...thBase, width:'5%', textAlign:'center' }}>Sr.</th>
                     <th style={{ ...thBase, textAlign:'left', width:'40%' }}>Course Name</th>

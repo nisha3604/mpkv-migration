@@ -15,6 +15,11 @@ import ForgotPassword   from './pages/common/ForgotPassword'
 import ResetPassword    from './pages/common/ResetPassword'
 import Unauthorized     from './pages/common/Unauthorized'
 import NotFound         from './pages/common/NotFound'
+import PrivacyPolicy    from './pages/common/PrivacyPolicy'
+import TermsAndConditions from './pages/common/TermsAndCondition'
+import RefundAndCancellationPolicy from './pages/common/RefundAndCancellation'
+import Disclaimer from './pages/common/Disclaimer'
+import AboutUs from './pages/common/AboutUs'
 
 // ── Candidate pages (UserTypeID = 91) ─────────────────────────────────────────
 import CandidateDashboard  from './pages/candidate/Dashboard'
@@ -39,6 +44,9 @@ import ChangeSecurityQuestion from './pages/candidate/ChangeSecurityQuestion'
 import ChangePassword       from './pages/candidate/ChangePassword'
 import PaymentHistory       from './pages/candidate/PaymentHistory'
 import PaymentReceipt       from './pages/candidate/PaymentReceipt'
+// import CheckAllotmentStatus from './pages/college/CheckAllotmentStatus'
+import AllotmentSummary       from './pages/admission/AllotmentSummary'
+import PayCategoryConversionFee from './pages/admission/PayCategoryConversionFee'
 // ── College pages (UserTypeID = 61 + admin 11/12) ─────────────────────────────
 import CollegeDashboard             from './pages/college/Dashboard'
 import CollegeSummary               from './pages/college/Summary'
@@ -56,6 +64,10 @@ import AdminDashboard        from './pages/admin/Dashboard'
 import AdminCollegeList      from './pages/admin/CollegeList'
 import AdminCollegePasswords from './pages/admin/CollegePasswords'
 import AdminResetPassword    from './pages/admin/ResetCollegePassword'
+
+
+
+
 
 // ── ComingSoon placeholder ─────────────────────────────────────────────────────
 function ComingSoon({ title }) {
@@ -101,11 +113,11 @@ export default function App() {
 
         <Route path="/search-college" element={<PublicLayout><ComingSoon title="Search Colleges" /></PublicLayout>} />
         <Route path="/allotment"      element={<PublicLayout><ComingSoon title="Allotment List" /></PublicLayout>} />
-        <Route path="/about"          element={<PublicLayout><ComingSoon title="About Us" /></PublicLayout>} />
-        <Route path="/terms"          element={<PublicLayout><ComingSoon title="Terms & Conditions" /></PublicLayout>} />
-        <Route path="/privacy"        element={<PublicLayout><ComingSoon title="Privacy Policy" /></PublicLayout>} />
-        <Route path="/refund"         element={<PublicLayout><ComingSoon title="Refund & Cancellation" /></PublicLayout>} />
-        <Route path="/disclaimer"     element={<PublicLayout><ComingSoon title="Disclaimer" /></PublicLayout>} />
+        <Route path="/about"          element={<PublicLayout><AboutUs/></PublicLayout>} />
+        <Route path="/terms"          element={<PublicLayout><TermsAndConditions/></PublicLayout>} />
+        <Route path="/privacy"        element={<PublicLayout><PrivacyPolicy/></PublicLayout>} />
+        <Route path="/refund"         element={<PublicLayout><RefundAndCancellationPolicy/></PublicLayout>} />
+        <Route path="/disclaimer"     element={<PublicLayout><Disclaimer/></PublicLayout>} />
 
         {/* Payment gateway callbacks — no auth, no layout */}
         <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -152,6 +164,13 @@ export default function App() {
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ChangeSecurityQuestion /></CandidateLayout></ProtectedRoute>} />
         <Route path="/candidate/payment-history"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><PaymentHistory /></CandidateLayout></ProtectedRoute>} />
+        {/* ── Admission / Allotment pages — shared /admission/... routes ── */}
+        <Route path="/admission/pay-category-fee"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><PayCategoryConversionFee /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/admission/allotment-status"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><CheckAllotmentStatus /></CandidateLayout></ProtectedRoute>} />
+        <Route path="/admission/allotment-summary"
+          element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><AllotmentSummary /></CandidateLayout></ProtectedRoute>} />
         {/* Print receipt — no layout, auto-prints, new window */}
         <Route path="/candidate/payment-receipt/:transactionId"
           element={<ProtectedRoute allowedRoles={[91]}><PaymentReceipt /></ProtectedRoute>} />
@@ -191,6 +210,7 @@ export default function App() {
         {/* Miscellaneous */}
         <Route path="/college/misc/update-profile"
           element={C([61,11,12], CollegeLayout, UpdateProfile)} />
+        {/* Change Security Question and Change Password — reuse candidate page components */}
         <Route path="/college/misc/security-question"
           element={C([61,11,12], CollegeLayout, ChangeSecurityQuestion)} />
         <Route path="/college/misc/change-password"
