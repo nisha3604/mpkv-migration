@@ -27,7 +27,6 @@ export default function CandidatesEligibleForCounselling() {
 
   // ── Excel export — ref on actual <table>, strip tr background, fix th colors ──
   const handleExport = () => {
-    if (!tableRef.current) return
     const printedOn = new Date().toLocaleString('en-IN')
 
     // Count columns from first header row
@@ -68,7 +67,11 @@ export default function CandidatesEligibleForCounselling() {
     const blob = new Blob([html], { type:'application/vnd.ms-excel;charset=utf-8;' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = 'CandidatesEligibleForCounselling.xls'; a.click()
+    a.href = url
+    a.download = 'CandidatesEligibleForCounselling.xls'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
