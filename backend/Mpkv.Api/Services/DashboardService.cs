@@ -49,45 +49,6 @@ namespace Mpkv.Api.Services
                 p2.Add("@CandidateID", candidateID);
                 var dt = _db.GetDataTable("Dashboard_GetApplicationProgress", p2);
 
-                // ── Step 3: login times ───────────────────────────────────────
-                // Always set a fallback so CurrentLoginDateTime is never blank.
-                response.CurrentLoginDateTime = DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss tt");
-                try
-                {
-                    var p4 = new DynamicParameters();
-                    p4.Add("@UserTypeID",  91);
-                    p4.Add("@UserLoginID", userLoginId);
-                    var loginInfoDt = _db.GetDataTable("Account_GetLoggedInUserDetails", p4);
-                    if (loginInfoDt != null && loginInfoDt.Rows.Count > 0)
-                    {
-                        var r = loginInfoDt.Rows[0];
-                        bool H(string n) => loginInfoDt.Columns.Contains(n) && r[n] != DBNull.Value;
-
-                        // CurrentLoginDateTime — prefer DB value, keep DateTime.Now fallback if absent
-                        if (H("CurrentLoginDateTime"))
-                        {
-                            var raw = r["CurrentLoginDateTime"].ToString() ?? "";
-                            if (DateTime.TryParse(raw, out var curDt))
-                                response.CurrentLoginDateTime = curDt.ToString("dd/MM/yyyy hh:mm:ss tt");
-                        }
-
-                        // LastLoginDateTime — only set when the DB has a real previous-session value
-                        if (H("LastLoginDateTime"))
-                        {
-                            var raw = r["LastLoginDateTime"].ToString() ?? "";
-                            if (DateTime.TryParse(raw, out var lastDt))
-                                response.LastLoginDateTime = lastDt.ToString("dd/MM/yyyy hh:mm:ss tt");
-                            else if (!string.IsNullOrWhiteSpace(raw))
-                                response.LastLoginDateTime = raw;
-                        }
-                    }
-                }
-                catch (Exception loginEx)
-                {
-                    // Non-critical — log but do not break the dashboard
-                    Console.WriteLine($"[GetDashboard] Login times SP error: {loginEx.Message}");
-                }
-
                 var progress = new ApplicationProgressResponse();
                 progress.Registration = true;
 

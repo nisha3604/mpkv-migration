@@ -85,20 +85,43 @@ namespace Mpkv.Api.Services
                     CourseID      = row["CourseID"]   != DBNull.Value ? Convert.ToInt32(row["CourseID"])   : 0,
                     DistrictID    = row["DistrictID"] != DBNull.Value ? Convert.ToInt32(row["DistrictID"]) : 0,
                     IsAdmin       = UserTypeHelper.IsAdmin(userTypeId),
-                    // Capture login times from CheckUserExists result BEFORE UpdateLoginStatus
-                    // shifts CurrentLoginDateTime → LastLoginDateTime.
-                    // This gives us the genuine previous-session time at the moment of login.
                     CurrentLoginDateTime = DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss tt"),
-                    LastLoginDateTime    = (dt.Columns.Contains("LastLoginDateTime") && row["LastLoginDateTime"] != DBNull.Value)
-                        ? (DateTime.TryParse(row["LastLoginDateTime"].ToString(), out var ldt)
-                            ? ldt.ToString("dd/MM/yyyy hh:mm:ss tt")
-                            : row["LastLoginDateTime"].ToString() ?? string.Empty)
-                        : string.Empty
                 };
+
+                // UpdateLoginStatus shifts old CurrentLoginDateTime → LastLoginDateTime in DB
                 var sessParam = new DynamicParameters();
                 sessParam.Add("@UserID",            userId);
                 sessParam.Add("@LoggedInSessionID", sessionId);
                 try { _db.ExecuteNonQuery("Account_UpdateLoginStatus", sessParam); } catch { }
+
+                // NOW read login times — AFTER UpdateLoginStatus ran, so LastLoginDateTime
+                // in the DB is the previous session's login time (the old CurrentLoginDateTime)
+                try
+                {
+                    var lparam = new DynamicParameters();
+                    lparam.Add("@UserTypeID",  userTypeId);
+                    lparam.Add("@UserLoginID", request.UserLoginID.Trim());
+                    var loginDt = _db.GetDataTable("Account_GetLoggedInUserDetails", lparam);
+                    if (loginDt != null && loginDt.Rows.Count > 0)
+                    {
+                        var lr = loginDt.Rows[0];
+                        bool LH(string n) => loginDt.Columns.Contains(n) && lr[n] != DBNull.Value;
+
+                        if (LH("CurrentLoginDateTime"))
+                        {
+                            var raw = lr["CurrentLoginDateTime"].ToString()!;
+                            if (DateTime.TryParse(raw, out var cdt))
+                                user.CurrentLoginDateTime = cdt.ToString("dd/MM/yyyy hh:mm:ss tt");
+                        }
+                        if (LH("LastLoginDateTime"))
+                        {
+                            var raw = lr["LastLoginDateTime"].ToString()!;
+                            if (DateTime.TryParse(raw, out var ldt))
+                                user.LastLoginDateTime = ldt.ToString("dd/MM/yyyy hh:mm:ss tt");
+                        }
+                    }
+                }
+                catch { /* non-critical — dashboard will show DateTime.Now as fallback */ }
 
                 string token = GenerateToken(user, sessionId);
 

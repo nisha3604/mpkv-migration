@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { homeApi } from '../../services/api'
 import SiteHeader from '../../components/SiteHeader'
 import SiteFooter from '../../components/SiteFooter'
@@ -17,6 +17,7 @@ import SiteFooter from '../../components/SiteFooter'
  */
 export default function Home() {
   const navigate = useNavigate()
+  const { isLoggedIn, loading: authLoading, user } = useAuth()
 
   const [data,       setData]       = useState(null)
   const [loading,    setLoading]    = useState(true)
@@ -28,7 +29,7 @@ export default function Home() {
     try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
   })
 
-  // Restore saved language on mount — same as PublicLayout and index.html DOMContentLoaded
+  // Restore saved language on mount
   useEffect(() => {
     if (langActive === 'mr') {
       setTimeout(() => {
@@ -38,11 +39,13 @@ export default function Home() {
     }
   }, [])
 
+  // Fetch home data — always runs (hooks must never be conditional)
   useEffect(() => {
+    // Skip fetch if we're about to redirect
+    if (isLoggedIn) return
     homeApi.getHomeData(1)
       .then(res => {
         setData(res.data)
-        // Show popup once per session (same as old code using sessionStorage)
         if (res.data.popup && !sessionStorage.getItem('mpkv_popup_shown')) {
           setShowPopup(true)
           sessionStorage.setItem('mpkv_popup_shown', '1')
@@ -50,7 +53,12 @@ export default function Home() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [isLoggedIn])
+
+  // Already logged in — redirect AFTER all hooks have been declared
+  if (!authLoading && isLoggedIn && user?.dashBoardPath) {
+    return <Navigate to={user.dashBoardPath} replace />
+  }
 
   const tabs = [
     { key: 'notifications', icon: 'fa-bell',      label: 'Notifications', items: data?.notifications ?? [] },

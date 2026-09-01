@@ -64,48 +64,6 @@ namespace Mpkv.Api.Services
                     _        => "User"
                 };
 
-                // ── Last login time from DB ───────────────────────────────────
-                // Always set a fallback so CurrentLoginDateTime is never blank.
-                dashboard.CurrentLoginDateTime = DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss tt");
-                try
-                {
-                    var p2 = new DynamicParameters();
-                    p2.Add("@UserTypeID",  userTypeId);
-                    p2.Add("@UserLoginID", userLoginId);
-                    var dt2 = _db.GetDataTable("Account_GetLoggedInUserDetails", p2);
-                    if (dt2 != null && dt2.Rows.Count > 0)
-                    {
-                        var r2 = dt2.Rows[0];
-                        bool H2(string n) => dt2.Columns.Contains(n) && r2[n] != DBNull.Value;
-
-                        if (H2("UserName"))
-                            dashboard.UserName = r2["UserName"]?.ToString() ?? "";
-
-                        // CurrentLoginDateTime — prefer DB value, keep DateTime.Now fallback if absent
-                        if (H2("CurrentLoginDateTime"))
-                        {
-                            var raw = r2["CurrentLoginDateTime"]?.ToString() ?? "";
-                            if (DateTime.TryParse(raw, out var dt4))
-                                dashboard.CurrentLoginDateTime = dt4.ToString("dd/MM/yyyy hh:mm:ss tt");
-                        }
-
-                        // LastLoginDateTime — only set when the DB has a real previous-session value
-                        if (H2("LastLoginDateTime"))
-                        {
-                            var raw = r2["LastLoginDateTime"]?.ToString() ?? "";
-                            if (DateTime.TryParse(raw, out var dt3))
-                                dashboard.LastLoginDateTime = dt3.ToString("dd/MM/yyyy hh:mm:ss tt");
-                            else if (!string.IsNullOrWhiteSpace(raw))
-                                dashboard.LastLoginDateTime = raw;
-                        }
-                    }
-                }
-                catch (Exception loginEx)
-                {
-                    // Non-critical — log but do not break the dashboard
-                    Console.WriteLine($"[CollegeDashboard] Login times SP error: {loginEx.Message}");
-                }
-
                 response.Success   = true;
                 response.Dashboard = dashboard;
             }

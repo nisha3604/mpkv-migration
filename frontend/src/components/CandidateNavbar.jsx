@@ -64,6 +64,7 @@ export default function Navbar() {
   const [isFormLocked,    setIsFormLocked]   = useState(user?.formLocked === true)
 
   const navRef    = useRef(null)   // dark navbar
+  const headerRef = useRef(null)   // for click-outside (unused but kept for safety)
 
   // Fetch real lock status from backend on every mount —
   // so the correct menu shows on every page, not just after visiting Dashboard.
@@ -280,7 +281,7 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Right: Language toggle */}
+        {/* Right: Language toggle + Sign Out */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 10 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 3,
@@ -307,6 +308,25 @@ export default function Navbar() {
               }}
             >मराठी</button>
           </div>
+
+          {/* Sign Out — desktop only, matches CollegeLayout style */}
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="hidden md:flex"
+            style={{
+              alignItems: 'center', gap: 8,
+              backgroundColor: 'transparent', color: '#ffffff',
+              border: '1px solid rgba(255,255,255,0.4)',
+              padding: '8px 16px', borderRadius: 6,
+              fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <i className="fas fa-sign-out-alt" />
+            Sign Out
+          </button>
 
           {/* Mobile hamburger */}
           <button
