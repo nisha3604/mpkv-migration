@@ -20,13 +20,18 @@ namespace Mpkv.Api.Data
 
         private SqlConnection CreateConnection() => new SqlConnection(_connectionString);
 
-        // ── Returns all rows as a DataTable ──────────────────────────────────
+        // ── Returns all rows as a DataTable (first result set only) ─────────
         public DataTable GetDataTable(string spName, DynamicParameters? param = null)
         {
-            using var conn   = CreateConnection();
-            using var reader = conn.ExecuteReader(spName, param, commandType: CommandType.StoredProcedure);
+            using var conn = CreateConnection();
+            conn.Open();
+            using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure };
+            if (param != null)
+                foreach (var name in param.ParameterNames)
+                    cmd.Parameters.AddWithValue(name, param.Get<object>(name) ?? DBNull.Value);
             var dt = new DataTable();
-            dt.Load(reader);
+            using var adapter = new SqlDataAdapter(cmd);
+            adapter.Fill(dt);   // fills first result set only
             return dt;
         }
 

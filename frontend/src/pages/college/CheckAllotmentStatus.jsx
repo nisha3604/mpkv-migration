@@ -120,17 +120,17 @@ export default function CheckAllotmentStatus() {
         setAllotment(data)
 
         // Determine if download section should show
-        // Mirrors: if (((PhaseID == 1||5||8) && RefusalRemainingFee > 0) || PhaseID==2..12)
+        // For college/admin: always show when allotment is found
+        // For candidate: mirrors old project phase-based logic
         const pid = parseInt(phaseID)
-        const showDownload = (
-          ([1,5,8].includes(pid) && data.refusalRemainingFee > 0) ||
-          [2,3,4,6,7,9,10,11,12].includes(pid)
-        )
+        const showDownload = (isCollege || isAdmin)
+          ? true
+          : (([1,5,8].includes(pid) && data.refusalRemainingFee > 0) ||
+             [2,3,4,6,7,9,10,11,12].includes(pid))
 
         if (showDownload) {
           if (isCandidate) {
             if (data.isAllotmentLetterDownloaded) {
-              // Already downloaded → pre-select YES + disable radio + show download button
               setWishToTakeAdmission('1')
               setAdmissionRadioEnabled(false)
               setShowDownloadSection(true)

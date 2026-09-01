@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { authApi } from '../../services/api'
 import PublicLayout from '../../components/PublicLayout'
@@ -13,13 +13,19 @@ import { normalizedEventValue } from '../../utils/formInput'
  *   Admin     → /admin/dashboard
  */
 export default function Login() {
-  const { login }  = useAuth()
+  const { login, isLoggedIn, loading: authLoading, user } = useAuth()
   const navigate   = useNavigate()
 
   const [form,    setForm]    = useState({ userLoginID: '', userPassword: '' })
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
   const [showPwd, setShowPwd] = useState(false)
+
+  // Already logged in — go straight to dashboard, don't show login form
+  // Hooks are above so this early return is safe
+  if (!authLoading && isLoggedIn && user?.dashBoardPath) {
+    return <Navigate to={user.dashBoardPath} replace />
+  }
 
   const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: normalizedEventValue(e) }))

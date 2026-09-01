@@ -87,16 +87,23 @@ namespace Mpkv.Api.Services
                         return new CheckApplicationIDResponse { Success = false, Message = "Invalid flag." };
                 }
 
-                // Step 4: Call SP — mirrors AdmissionWorker().GetReportingDetails(...)
+                // Step 4: Pass userLoginId directly to SP.
+                // SP WHERE: CAST(B.CollegeID AS VARCHAR) = @UserLoginID
+                // SP also looks up UserTypeID from Master_User using @UserLoginID.
+                string spUserLoginId = userLoginId;
+
+                // Step 4b: Call SP — mirrors AdmissionWorker().GetReportingDetails(...)
+                Console.WriteLine($"[CheckApplicationID] flag={flag} userTypeId={userTypeId} userLoginId='{userLoginId}' spUserLoginId='{spUserLoginId}' candidateId={candidateId} encryptedId='{encryptedId}' phaseId={effectivePhaseId} reportingStatus={reportingStatus}");
                 var param = new DynamicParameters();
-                param.Add("@CandidateID",          candidateId);
-                param.Add("@EncryptedCandidateID",  encryptedId);
-                param.Add("@PhaseID",               effectivePhaseId);
-                param.Add("@ReportingStatus",       reportingStatus);
-                param.Add("@UserLoginID",           userLoginId);
-                param.Add("@Flag",                  flag);
+                param.Add("@CandidateID",         (int)candidateId);
+                param.Add("@EncryptedCandidateID", encryptedId);
+                param.Add("@PhaseID",              effectivePhaseId);
+                param.Add("@ReportingStatus",      reportingStatus);
+                param.Add("@UserLoginID",          spUserLoginId);
+                param.Add("@Flag",                 flag);
 
                 var dt = _db.GetDataTable("Admission_GetReportingDetails", param);
+                Console.WriteLine($"[CheckApplicationID] SP returned {dt?.Rows.Count ?? -1} rows");
 
                 // Step 5: Empty result — message depends on UserTypeID (61 vs others)
                 if (dt == null || dt.Rows.Count == 0)

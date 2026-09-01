@@ -7,7 +7,7 @@ namespace Mpkv.Api.Services
     public interface IAllotmentService
     {
         PhaseListResponse          GetPhaseList(int userTypeId, string userLoginId);
-        AllotmentStatusResponse    GetAllotmentStatus(string applicationId, short phaseId, int userTypeId, string userLoginId);
+        AllotmentStatusResponse    GetAllotmentStatus(string applicationId, short phaseId, int userTypeId, string userLoginId, long userId = 0);
         DownloadAllotmentLetterResponse SaveDownloadStatus(long candidateId, long collegeId, short phaseId, string userLoginId, string ipAddress);
         RefusalFeeInitiateResponse InitiateRefusalFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress);
         // New — Allotment Summary + Category Conversion Fee
@@ -84,7 +84,7 @@ namespace Mpkv.Api.Services
         // Step 3: Admission_GetAllotmentStatus(@PhaseID, @CandidateID) → full details
         // Step 4: For college user (61): verify AllottedCollegeCode == userLoginId
         // ══════════════════════════════════════════════════════════════════════
-        public AllotmentStatusResponse GetAllotmentStatus(string applicationId, short phaseId, int userTypeId, string userLoginId)
+        public AllotmentStatusResponse GetAllotmentStatus(string applicationId, short phaseId, int userTypeId, string userLoginId, long userId = 0)
         {
             try
             {
@@ -130,10 +130,39 @@ namespace Mpkv.Api.Services
                 var dr = ds.Tables[0].Rows[0];
                 bool HC(string n) => ds.Tables[0].Columns.Contains(n);
 
-                // Step 4: College restriction check (mirrors old code)
+                // Step 4: College restriction check
+                // SP returns AllottedCollegeID (numeric) and AllottedCollegeCode (CollegeCode string).
+                // Primary check: numeric UserID == AllottedCollegeID (unambiguous)
+                // Fallback: look up CollegeCode for this college and compare against AllottedCollegeCode
                 var allottedCollegeCode = HC("AllottedCollegeCode") ? dr["AllottedCollegeCode"]?.ToString() ?? "" : "";
-                if (userTypeId == 61 && userLoginId.Trim().ToUpper() != allottedCollegeCode.Trim().ToUpper())
-                    return new AllotmentStatusResponse { Success = false, Message = "This Candidate is Not Allotted in Your College." };
+                long allottedCollegeID  = HC("AllottedCollegeID") && dr["AllottedCollegeID"] != DBNull.Value
+                    ? Convert.ToInt64(dr["AllottedCollegeID"]) : 0;
+
+                if (userTypeId == 61)
+                {
+                    bool idMatch = userId > 0 && allottedCollegeID == userId;
+
+                    if (!idMatch)
+                    {
+                        // Fallback: look up CollegeCode and compare against AllottedCollegeCode
+                        try
+                        {
+                            var cp = new DynamicParameters();
+                            cp.Add("@CollegeID", userId);
+                            var cdt = _db.GetDataTable("College_GetCollegeSummary", cp);
+                            if (cdt != null && cdt.Rows.Count > 0 && cdt.Columns.Contains("CollegeCode"))
+                            {
+                                var myCode = cdt.Rows[0]["CollegeCode"]?.ToString() ?? "";
+                                if (!string.IsNullOrEmpty(myCode) && myCode.Trim() == allottedCollegeCode.Trim())
+                                    idMatch = true;
+                            }
+                        }
+                        catch { /* non-critical */ }
+                    }
+
+                    if (!idMatch)
+                        return new AllotmentStatusResponse { Success = false, Message = "This Candidate is Not Allotted in Your College." };
+                }
 
                 // Map all fields
                 var dto = new AllotmentStatusDto

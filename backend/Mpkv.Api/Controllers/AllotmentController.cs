@@ -23,6 +23,7 @@ namespace Mpkv.Api.Controllers
         private string GetLoginId()     => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
         private string GetIp()          => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         private long   GetCandidateId() => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0", out var id) ? id : 0;
+        private long   GetUserId()      => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "0", out var id) ? id : 0;
 
         // GET /api/admission/phases
         // Returns phase dropdown + current phase ID
@@ -40,7 +41,7 @@ namespace Mpkv.Api.Controllers
         {
             if (request == null)
                 return BadRequest(new AllotmentStatusResponse { Success = false, Message = "Invalid request." });
-            var result = _allotmentService.GetAllotmentStatus(request.ApplicationID, request.PhaseID, GetUserTypeId(), GetLoginId());
+            var result = _allotmentService.GetAllotmentStatus(request.ApplicationID, request.PhaseID, GetUserTypeId(), GetLoginId(), GetUserId());
             return result.Success ? Ok(result) : Ok(result); // always 200 with success=false+message
         }
 
