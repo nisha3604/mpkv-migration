@@ -35,7 +35,7 @@ export default function PublicLayout({ children }) {
       <SiteHeader />
 
       {/* Public navbar — Home | Search College | EN मराठी | New Registration | Log In */}
-      <nav style={{ backgroundColor: '#14212e', padding: '0 30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 40 }}>
+      <nav style={{ backgroundColor: '#14212e', padding: '5px 30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 40 }}>
         <ul style={{ display: 'flex', flexDirection: 'row', listStyle: 'none', margin: 0, padding: 0 }}>
           {navLinks.map(link => (
             <li key={link.to}>

@@ -45,7 +45,12 @@ export const authApi = {
 
 // ── Home ─────────────────────────────────────────────────────────────────────
 export const homeApi = {
-  getHomeData: (regionId = 1) => api.get(`/home?regionId=${regionId}`)
+  getHomeData             : (regionId = 1) => api.get(`/home?regionId=${regionId}`),
+  getSearchCollegeMasters : ()             => api.get('/home/search-college/masters'),
+  searchCollege           : (data)         => api.post('/home/search-college', data),
+  getAllotmentListMasters  : ()             => api.get('/home/allotment-list/masters'),
+  getCollegesByCourse     : (courseId)     => api.post('/home/allotment-list/colleges', courseId),
+  getAllotmentList         : (data)         => api.post('/home/allotment-list', data),
 }
 
 // ── Registration ─────────────────────────────────────────────────────────────

@@ -7,6 +7,8 @@ import CollegeLayout     from './components/CollegeLayout'
 
 // ── Common pages ──────────────────────────────────────────────────────────────
 import Home             from './pages/common/Home'
+import SearchCollege      from './pages/common/SearchCollege'
+import AllotmentList      from './pages/common/AllotmentList'
 import Login            from './pages/common/Login'
 import Registration     from './pages/common/Registration'
 import RegistrationInfo from './pages/common/RegistrationInfo'
@@ -102,7 +104,7 @@ export default function App() {
       <Routes>
 
         {/* ── Public ───────────────────────────────────────────────────── */}
-        <Route path="/"                element={<Home />} />
+        <Route path="/"                element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/login"           element={<Login />} />
         <Route path="/register"        element={<Registration />} />
         <Route path="/register/info"   element={<RegistrationInfo />} />
@@ -111,8 +113,8 @@ export default function App() {
         <Route path="/reset-password"  element={<ResetPassword />} />
         <Route path="/unauthorized"    element={<Unauthorized />} />
 
-        <Route path="/search-college" element={<PublicLayout><ComingSoon title="Search Colleges" /></PublicLayout>} />
-        <Route path="/allotment"      element={<PublicLayout><ComingSoon title="Allotment List" /></PublicLayout>} />
+        <Route path="/search-college" element={<PublicLayout><SearchCollege /></PublicLayout>} />
+        <Route path="/allotment"      element={<PublicLayout><AllotmentList/></PublicLayout>} />
         <Route path="/about"          element={<PublicLayout><AboutUs/></PublicLayout>} />
         <Route path="/terms"          element={<PublicLayout><TermsAndConditions/></PublicLayout>} />
         <Route path="/privacy"        element={<PublicLayout><PrivacyPolicy/></PublicLayout>} />
