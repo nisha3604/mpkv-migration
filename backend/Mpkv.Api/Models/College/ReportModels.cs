@@ -98,4 +98,48 @@ namespace Mpkv.Api.Models.College
         public string Message { get; set; } = string.Empty;
         public List<EligibleCandidateRow> Rows { get; set; } = new();
     }
+
+    // ── Allotment Detail (drill-down from AllotmentReportByCourse) ────────────
+    // SP: Report_GetAllotmentReport(@CollegeID, @PhaseID, @Flag)
+    // Flag: Allotment | AllotmentRefused | AllotmentLetterDownloaded | Admitted | Rejected | Cancelled
+    public class AllotmentDetailResponse
+    {
+        public bool   Success     { get; set; }
+        public string Message     { get; set; } = string.Empty;
+        public string CollegeName { get; set; } = string.Empty;
+        public string CourseName  { get; set; } = string.Empty;
+        public string FlagLabel   { get; set; } = string.Empty;
+        public List<AllotmentDetailRow> Rows { get; set; } = new();
+    }
+
+    public class AllotmentDetailRow
+    {
+        public string MeritNo         { get; set; } = string.Empty;
+        public string TotalWeightage  { get; set; } = string.Empty;
+        public string ApplicationID   { get; set; } = string.Empty;
+        public string CandidateName   { get; set; } = string.Empty;
+        public string MobileNo        { get; set; } = string.Empty;
+        public string AllottedTypeDisplay { get; set; } = string.Empty;
+        public string CurrentStatus   { get; set; } = string.Empty;
+    }
+
+    // ── Composite Admission Detail (drill-down from CompositeAdmissionReportByCourse) ──
+    // SP: Report_GetCompositeAdmissionReport(@CollegeID, @PhaseID)
+    public class CompositeDetailResponse
+    {
+        public bool   Success     { get; set; }
+        public string Message     { get; set; } = string.Empty;
+        public string CollegeName { get; set; } = string.Empty;
+        public string CourseName  { get; set; } = string.Empty;
+        public List<CompositeDetailRow> Rows { get; set; } = new();
+    }
+
+    public class CompositeDetailRow
+    {
+        public string TotalWeightage      { get; set; } = string.Empty;
+        public string ApplicationID       { get; set; } = string.Empty;
+        public string CandidateName       { get; set; } = string.Empty;
+        public string MobileNo            { get; set; } = string.Empty;
+        public string AllottedTypeDisplay { get; set; } = string.Empty;
+    }
 }

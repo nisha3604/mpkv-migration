@@ -15,7 +15,7 @@ namespace Mpkv.Api.Controllers
         public ApplicationFormController(IApplicationFormService appFormService) => _appFormService = appFormService;
 
         private long   GetCandidateId()  { var c = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? "0"; return long.TryParse(c, out var id) ? id : 0; }
-        private string GetUserLoginId()  => User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName) ?? User.FindFirstValue(ClaimTypes.Name) ?? "";
+        private string GetUserLoginId()  => User.FindFirstValue(ClaimTypes.Name) ?? "";
         private string GetIpAddress()    => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         [HttpGet("masters/personal")]  public IActionResult GetPersonalMasters()  => Ok(_appFormService.GetPersonalMasters());

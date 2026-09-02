@@ -1,6 +1,7 @@
 using Dapper;
 using Mpkv.Api.Data;
 using Mpkv.Api.Models.College;
+using System.Data;
 
 namespace Mpkv.Api.Services
 {
@@ -10,6 +11,8 @@ namespace Mpkv.Api.Services
         AllotmentReportByCourseResponse            GetAllotmentReportByCourse(long collegeId, int phaseId);
         CompositeAdmissionReportByCourseResponse   GetCompositeAdmissionReportByCourse(long collegeId);
         EligibleCandidatesResponse                 GetCandidatesEligibleForCounselling(int courseId);
+        AllotmentDetailResponse                    GetAllotmentDetail(long collegeId, int phaseId, string flag);
+        CompositeDetailResponse                    GetCompositeDetail(long collegeId, int phaseId);
     }
 
     public class ReportService : IReportService
@@ -227,6 +230,95 @@ namespace Mpkv.Api.Services
             }
             catch (Exception ex) { response.Success = false; response.Message = ex.Message; }
             return response;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GetAllotmentDetail — mirrors AllotmentReport.aspx.cs GetAllotmentReport()
+        // SP: Report_GetAllotmentReport(@CollegeID, @PhaseID, @Flag)
+        // Flags: Allotment | AllotmentRefused | AllotmentLetterDownloaded | Admitted | Rejected | Cancelled
+        // ══════════════════════════════════════════════════════════════════════
+        public AllotmentDetailResponse GetAllotmentDetail(long collegeId, int phaseId, string flag)
+        {
+            var r = new AllotmentDetailResponse();
+            try
+            {
+                // Resolve college name
+                try { var np = new DynamicParameters(); np.Add("@CollegeID", collegeId); r.CollegeName = _db.ExecuteScalar("Report_GetCollegeName", np)?.ToString() ?? ""; } catch { }
+                try { var np = new DynamicParameters(); np.Add("@CollegeID", collegeId); r.CourseName  = _db.ExecuteScalar("Report_GetCourseName",   np)?.ToString() ?? ""; } catch { }
+
+                // Human-readable flag label — mirrors ViewState["Flag"] in AllotmentReport.aspx.cs
+                r.FlagLabel = flag switch
+                {
+                    "Allotment"                 => "",
+                    "AllotmentRefused"          => "Allotment Refused",
+                    "AllotmentLetterDownloaded" => "Allotment Letter Downloaded",
+                    "Admitted"                  => "Admitted",
+                    "Rejected"                  => "Rejected",
+                    "Cancelled"                 => "Cancelled",
+                    _                           => flag,
+                };
+
+                var p = new DynamicParameters();
+                p.Add("@CollegeID", collegeId);
+                p.Add("@PhaseID",   (short)phaseId);
+                p.Add("@Flag",      flag);
+                var dt = _db.GetDataTable("Report_GetAllotmentReport", p);
+                if (dt == null || dt.Rows.Count == 0) { r.Success = true; return r; }
+
+                bool HC(string n) => dt.Columns.Contains(n);
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    r.Rows.Add(new AllotmentDetailRow
+                    {
+                        MeritNo           = HC("MeritNo")           ? row["MeritNo"]?.ToString()           ?? "" : "",
+                        TotalWeightage    = HC("TotalWeightage")    ? row["TotalWeightage"]?.ToString()    ?? "" : "",
+                        ApplicationID     = HC("ApplicationID")     ? row["ApplicationID"]?.ToString()     ?? "" : "",
+                        CandidateName     = HC("CandidateName")     ? row["CandidateName"]?.ToString()     ?? "" : "",
+                        MobileNo          = HC("MobileNo")          ? row["MobileNo"]?.ToString()          ?? "" : "",
+                        AllottedTypeDisplay= HC("AllottedTypeDisplay")? row["AllottedTypeDisplay"]?.ToString()??"" : "",
+                        CurrentStatus     = HC("CurrentStatus")     ? row["CurrentStatus"]?.ToString()     ?? "" : "",
+                    });
+                }
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GetCompositeDetail — mirrors CompositeAdmissionReport.aspx.cs GetCompositeReport()
+        // SP: Report_GetCompositeAdmissionReport(@CollegeID, @PhaseID)
+        // ══════════════════════════════════════════════════════════════════════
+        public CompositeDetailResponse GetCompositeDetail(long collegeId, int phaseId)
+        {
+            var r = new CompositeDetailResponse();
+            try
+            {
+                try { var np = new DynamicParameters(); np.Add("@CollegeID", collegeId); r.CollegeName = _db.ExecuteScalar("Report_GetCollegeName", np)?.ToString() ?? ""; } catch { }
+                try { var np = new DynamicParameters(); np.Add("@CollegeID", collegeId); r.CourseName  = _db.ExecuteScalar("Report_GetCourseName",   np)?.ToString() ?? ""; } catch { }
+
+                var p = new DynamicParameters();
+                p.Add("@CollegeID", collegeId);
+                p.Add("@PhaseID",   (short)phaseId);
+                var dt = _db.GetDataTable("Report_GetCompositeAdmissionReport", p);
+                if (dt == null || dt.Rows.Count == 0) { r.Success = true; return r; }
+
+                bool HC(string n) => dt.Columns.Contains(n);
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    r.Rows.Add(new CompositeDetailRow
+                    {
+                        TotalWeightage     = HC("TotalWeightage")     ? row["TotalWeightage"]?.ToString()     ?? "" : "",
+                        ApplicationID      = HC("ApplicationID")      ? row["ApplicationID"]?.ToString()      ?? "" : "",
+                        CandidateName      = HC("CandidateName")      ? row["CandidateName"]?.ToString()      ?? "" : "",
+                        MobileNo           = HC("MobileNo")           ? row["MobileNo"]?.ToString()           ?? "" : "",
+                        AllottedTypeDisplay= HC("AllottedTypeDisplay")? row["AllottedTypeDisplay"]?.ToString()??"" : "",
+                    });
+                }
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
         }
     }
 }

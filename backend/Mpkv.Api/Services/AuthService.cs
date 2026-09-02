@@ -139,7 +139,7 @@ namespace Mpkv.Api.Services
             return new UserInfo
             {
                 UserID        = long.Parse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "0"),
-                UserLoginID   = principal.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? string.Empty,
+                UserLoginID   = principal.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
                 UserName      = principal.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
                 UserTypeID    = int.Parse(principal.FindFirstValue("UserTypeID") ?? "0"),
                 CourseID      = int.Parse(principal.FindFirstValue("CourseID")   ?? "0"),

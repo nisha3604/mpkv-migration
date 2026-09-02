@@ -179,6 +179,11 @@ export const admissionApi = {
   downloadLetter               : (data) => api.post('/admission/download-allotment-letter', data),
   payRefusalFee                : (data) => api.post('/admission/refusal-fee', data),
   checkApplicationID           : (data) => api.post('/admission/check-application-id', data),
+  getAdmissionSummary          : (data) => api.post('/admission/admission-summary', data),
+  confirmAdmission             : (data) => api.post('/admission/confirm', data),
+  rejectAdmission              : (data) => api.post('/admission/reject', data),
+  cancelAdmission              : (data) => api.post('/admission/cancel-action', data),
+  uploadAdmissionDocument      : (formData) => api.post('/admission/upload-document', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getAllotmentSummary           : ()     => api.get('/admission/allotment-summary'),
   getCategoryConversionFee     : ()     => api.get('/admission/category-conversion-fee'),
   initiateCategoryConversionFee: (data) => api.post('/admission/category-conversion-fee/initiate', data),
@@ -192,10 +197,12 @@ export const counsellingApi = {
 
 // ── Reports ───────────────────────────────────────────────────────────────────
 export const reportApi = {
-  getPhases           : ()                    => api.get('/reports/phases'),
-  getAllotmentByCourse : (phaseId, collegeId) => api.get(`/reports/allotment-by-course?phaseId=${phaseId}${collegeId ? `&collegeId=${collegeId}` : ''}`),
-  getCompositeByCourse: (collegeId)          => api.get(`/reports/composite-by-course${collegeId ? `?collegeId=${collegeId}` : ''}`),
-  getEligibleForCounselling: ()              => api.get('/reports/eligible-for-counselling'),
+  getPhases             : ()                          => api.get('/reports/phases'),
+  getAllotmentByCourse  : (phaseId, collegeId)        => api.get(`/reports/allotment-by-course?phaseId=${phaseId}${collegeId ? `&collegeId=${collegeId}` : ''}`),
+  getCompositeByCourse  : (collegeId)                => api.get(`/reports/composite-by-course${collegeId ? `?collegeId=${collegeId}` : ''}`),
+  getEligibleForCounselling: ()                      => api.get('/reports/eligible-for-counselling'),
+  getAllotmentDetail     : (phaseId, collegeId, flag) => api.get(`/reports/allotment-detail?phaseId=${phaseId}&flag=${flag}${collegeId ? `&collegeId=${collegeId}` : ''}`),
+  getCompositeDetail    : (phaseId, collegeId)       => api.get(`/reports/composite-detail?phaseId=${phaseId}${collegeId ? `&collegeId=${collegeId}` : ''}`),
 }
 
 // ── User Profile ──────────────────────────────────────────────────────────────

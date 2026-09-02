@@ -27,7 +27,8 @@ namespace Mpkv.Api.Controllers
         }
 
         private int    GetUserTypeId() => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
-        private string GetLoginId()    => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
+        private string GetLoginId()    => User.FindFirstValue(ClaimTypes.Name) ?? "";
+        private string GetIp()         => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         // POST /api/admission/check-application-id
         // Body: { applicationId, phaseId, flag }
@@ -49,6 +50,52 @@ namespace Mpkv.Api.Controllers
 
             // Always return 200 — error shown inline like old ShowMessage()
             return Ok(result);
+        }
+
+        // ── Admission Summary ─────────────────────────────────────────────
+        [HttpPost("admission-summary")]
+        public IActionResult GetAdmissionSummary([FromBody] AdmissionSummaryRequest req)
+        {
+            if (req == null) return BadRequest(new AdmissionSummaryResponse { Message = "Invalid request." });
+            var result = _service.GetAdmissionSummary(req.CandidateID, req.CollegeID, req.PhaseID, GetLoginId(), req.Flag);
+            return Ok(result);
+        }
+
+        // ── Confirm Admission ─────────────────────────────────────────────
+        [HttpPost("confirm")]
+        public IActionResult ConfirmAdmission([FromBody] ConfirmAdmissionRequest req)
+        {
+            if (req == null) return BadRequest(new AdmissionActionResponse { Message = "Invalid request." });
+            var result = _service.ConfirmAdmission(req, GetLoginId(), GetIp());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // ── Reject Admission ──────────────────────────────────────────────
+        [HttpPost("reject")]
+        public IActionResult RejectAdmission([FromBody] ConfirmAdmissionRequest req)
+        {
+            if (req == null) return BadRequest(new AdmissionActionResponse { Message = "Invalid request." });
+            var result = _service.RejectAdmission(req, GetLoginId(), GetIp());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // ── Cancel Admission ──────────────────────────────────────────────
+        [HttpPost("cancel-action")]
+        public IActionResult CancelAdmission([FromBody] ConfirmAdmissionRequest req)
+        {
+            if (req == null) return BadRequest(new AdmissionActionResponse { Message = "Invalid request." });
+            var result = _service.CancelAdmission(req, GetLoginId(), GetIp());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // ── Upload document during admission ──────────────────────────────
+        [HttpPost("upload-document")]
+        [RequestSizeLimit(5 * 1024 * 1024)]
+        public async Task<IActionResult> UploadDocument([FromForm] UploadAdmissionDocRequest req, [FromForm] IFormFile file)
+        {
+            if (req == null || file == null) return BadRequest(new AdmissionActionResponse { Message = "Invalid request." });
+            var result = await _service.UploadAdmissionDocument(req, file, GetLoginId(), GetIp());
+            return result.Success ? Ok(result) : BadRequest(result);
         }
     }
 }

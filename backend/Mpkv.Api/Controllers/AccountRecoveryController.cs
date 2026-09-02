@@ -28,7 +28,7 @@ namespace Mpkv.Api.Controllers
         {
             if (req == null) return BadRequest(new AccountChangeResponse { Success=false, Message="Invalid request." });
             var userId      = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
-            var userLoginId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName)?.Value ?? "";
+            var userLoginId = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
             var ip          = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             if (userId <= 0) return Unauthorized();
             var r = _accountService.ChangePassword(userId, userLoginId, ip, req);
@@ -40,7 +40,7 @@ namespace Mpkv.Api.Controllers
         {
             if (req == null || string.IsNullOrWhiteSpace(req.NewMobileNo)) return BadRequest(new AccountChangeResponse { Success=false, Message="Mobile number is required." });
             var userId      = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
-            var userLoginId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName)?.Value ?? "";
+            var userLoginId = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
             var ip          = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             if (userId <= 0) return Unauthorized();
             var r = _accountService.ChangeMobileNo(userId, userLoginId, ip, req.NewMobileNo);
@@ -52,7 +52,7 @@ namespace Mpkv.Api.Controllers
         {
             if (req == null || string.IsNullOrWhiteSpace(req.NewEmailId)) return BadRequest(new AccountChangeResponse { Success=false, Message="Email ID is required." });
             var userId      = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
-            var userLoginId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName)?.Value ?? "";
+            var userLoginId = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
             var ip          = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             if (userId <= 0) return Unauthorized();
             var r = _accountService.ChangeEmailId(userId, userLoginId, ip, req.NewEmailId);
@@ -72,7 +72,7 @@ namespace Mpkv.Api.Controllers
         {
             if (req == null || req.SecurityQuestionID <= 0) return BadRequest(new AccountChangeResponse { Success=false, Message="Please select a security question." });
             var userId      = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
-            var userLoginId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName)?.Value ?? "";
+            var userLoginId = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
             var ip          = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             if (userId <= 0) return Unauthorized();
             var r = _accountService.ChangeSecurityQuestion(userId, userLoginId, ip, req);

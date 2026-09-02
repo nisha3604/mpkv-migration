@@ -23,7 +23,7 @@ namespace Mpkv.Api.Controllers
         public CollegeAdminController(ICollegeService collegeService) => _collegeService = collegeService;
 
         private int    GetUserTypeId() => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
-        private string GetLoginId()    => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
+        private string GetLoginId()    => User.FindFirstValue(ClaimTypes.Name) ?? "";
         private string GetIp()         => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         private bool   IsAdmin()       => UserTypeHelper.IsAdmin(GetUserTypeId());
 

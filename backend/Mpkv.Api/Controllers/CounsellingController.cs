@@ -22,7 +22,7 @@ namespace Mpkv.Api.Controllers
         private int    GetUserTypeId() => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
         private int    GetCourseId()   => int.Parse(User.FindFirstValue("CourseID")   ?? "0");
         private int    GetDistrictId() => int.Parse(User.FindFirstValue("DistrictID") ?? "0");
-        private string GetLoginId()    => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
+        private string GetLoginId()    => User.FindFirstValue(ClaimTypes.Name) ?? "";
 
         // GET /api/counselling/phases
         // Loads phases + access check + college CourseID restriction
