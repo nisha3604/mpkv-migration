@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { homeApi } from '../../services/api'
 import SiteHeader from '../../components/SiteHeader'
 import SiteFooter from '../../components/SiteFooter'

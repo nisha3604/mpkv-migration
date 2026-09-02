@@ -20,7 +20,7 @@ namespace Mpkv.Api.Controllers
         public AllotmentController(IAllotmentService allotmentService) => _allotmentService = allotmentService;
 
         private int    GetUserTypeId()  => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
-        private string GetLoginId()     => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
+        private string GetLoginId()     => User.FindFirstValue(ClaimTypes.Name) ?? "";
         private string GetIp()          => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         private long   GetCandidateId() => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0", out var id) ? id : 0;
         private long   GetUserId()      => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "0", out var id) ? id : 0;

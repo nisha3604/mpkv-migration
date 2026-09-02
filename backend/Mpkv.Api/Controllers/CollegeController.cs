@@ -29,7 +29,7 @@ namespace Mpkv.Api.Controllers
         }
 
         private long   GetUserId()     => long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "0");
-        private string GetLoginId()    => User.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "";
+        private string GetLoginId()    => User.FindFirstValue(ClaimTypes.Name) ?? "";
         private int    GetUserTypeId() => int.Parse(User.FindFirstValue("UserTypeID") ?? "0");
         private string GetIp()         => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 

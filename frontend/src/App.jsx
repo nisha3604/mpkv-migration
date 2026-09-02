@@ -55,9 +55,15 @@ import CollegeSummary               from './pages/college/Summary'
 import CollegeEdit                  from './pages/college/EditDetails'
 import CheckAllotmentStatus         from './pages/college/CheckAllotmentStatus'
 import CheckApplicationID           from './pages/college/CheckApplicationID'
+import AdmissionSummary             from './pages/college/AdmissionSummary'
+import AdmissionLetter              from './pages/college/AdmissionLetter'
+import AdmissionCancellationLetter  from './pages/college/AdmissionCancellationLetter'
+import AdmissionRejectionLetter     from './pages/college/AdmissionRejectionLetter'
 import CounsellingCheckApplicationID from './pages/college/CounsellingCheckApplicationID'
 import AllotmentReportByCourse      from './pages/college/AllotmentReportByCourse'
 import CompositeAdmissionReportByCourse from './pages/college/CompositeAdmissionReportByCourse'
+import AllotmentDetail               from './pages/college/AllotmentDetail'
+import CompositeDetail               from './pages/college/CompositeDetail'
 import CandidatesEligibleForCounselling from './pages/college/CandidatesEligibleForCounselling'
 import UpdateProfile                    from './pages/college/UpdateProfile'
 
@@ -194,6 +200,18 @@ export default function App() {
           element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
         <Route path="/college/admission/cancellation-letter"
           element={C([61,11,12], CollegeLayout, CheckApplicationID)} />
+        {/* Second stage — mirrors ConfirmAdmission.aspx */}
+        <Route path="/college/admission/summary"
+          element={C([61,11,12], CollegeLayout, AdmissionSummary)} />
+        {/* Print Admission Letter — mirrors AdmissionLetter.aspx */}
+        <Route path="/college/admission/letter"
+          element={C([61,11,12], CollegeLayout, AdmissionLetter)} />
+        {/* Print Cancellation Letter — mirrors AdmissionCancellationLetter.aspx */}
+        <Route path="/college/admission/cancellation-letter-print"
+          element={C([61,11,12], CollegeLayout, AdmissionCancellationLetter)} />
+        {/* Print Rejection Letter — mirrors AdmissionRejectionLetter.aspx */}
+        <Route path="/college/admission/rejection-letter-print"
+          element={C([61,11,12], CollegeLayout, AdmissionRejectionLetter)} />
 
         {/* Spot Round Menu */}
         <Route path="/college/spot-round/offer-seat"
@@ -202,10 +220,12 @@ export default function App() {
         {/* Reports Menu */}
         <Route path="/college/reports/allotment"
           element={C([61,11,12], CollegeLayout, AllotmentReportByCourse)} />
+        <Route path="/college/reports/allotment-detail"
+          element={C([61,11,12], CollegeLayout, AllotmentDetail)} />
         <Route path="/college/reports/composite"
           element={C([61,11,12], CollegeLayout, CompositeAdmissionReportByCourse)} />
-        <Route path="/college/reports/composite"
-          element={CC([61,11,12], CollegeLayout, 'Composite Admission Report')} />
+        <Route path="/college/reports/composite-detail"
+          element={C([61,11,12], CollegeLayout, CompositeDetail)} />
         <Route path="/college/reports/eligible"
           element={C([61,11,12], CollegeLayout, CandidatesEligibleForCounselling)} />
 

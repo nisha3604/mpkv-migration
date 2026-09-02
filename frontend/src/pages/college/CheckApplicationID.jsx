@@ -17,10 +17,10 @@ export default function CheckApplicationID() {
     if (location.state?.flag) return location.state.flag
     const path = location.pathname
     if (path.includes('confirm'))             return 'ConfirmAdmission'
-    if (path.includes('cancel'))              return 'CancelAdmission'
     if (path.includes('cancellation-letter')) return 'PrintAdmissionCancellationLetter'
     if (path.includes('rejection-letter'))    return 'PrintAdmissionRejectionLetter'
     if (path.includes('admission-letter'))    return 'PrintAdmissionLetter'
+    if (path.includes('cancel'))              return 'CancelAdmission'
     return 'ConfirmAdmission'
   }
   const flag = getFlag()
@@ -29,7 +29,7 @@ export default function CheckApplicationID() {
     ConfirmAdmission                : { label:'Confirm Admission',                icon:'fa-user-check',    color:'#059669', gradient:'linear-gradient(135deg,#059669,#047857)' },
     CancelAdmission                 : { label:'Cancel Admission',                 icon:'fa-user-times',    color:'#dc2626', gradient:'linear-gradient(135deg,#dc2626,#b91c1c)' },
     PrintAdmissionLetter            : { label:'Print Admission Letter',           icon:'fa-file-alt',      color:'#0ea5e9', gradient:'linear-gradient(135deg,#0ea5e9,#0284c7)' },
-    PrintAdmissionCancellationLetter: { label:'Print Admission Cancellation Letter', icon:'fa-file-times', color:'#f59e0b', gradient:'linear-gradient(135deg,#f59e0b,#d97706)' },
+    PrintAdmissionCancellationLetter: { label:'Print Admission Cancellation Letter', icon:'fa-file-times', color:'#b45309', gradient:'linear-gradient(135deg,#92400e,#78350f)' },
     PrintAdmissionRejectionLetter   : { label:'Print Admission Rejection Letter', icon:'fa-file-excel',   color:'#8b5cf6', gradient:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
   }
   const cfg       = flagConfig[flag] ?? flagConfig.ConfirmAdmission
@@ -84,13 +84,30 @@ export default function CheckApplicationID() {
   const handleKeyDown = e => { if (e.key === 'Enter') handleSearch() }
 
   const handleProceed = (proceedUrl) => {
-    const match = proceedUrl.match(/href=['"]([^'"]+)['"]/i)
-    if (match) {
-      const href     = match[1]
-      const params   = new URLSearchParams(href.split('?')[1] ?? '')
-      const targetFlag = params.get('Flag') ?? flag
-      window.location.href = `/college/admission/summary?p1=${params.get('P1')??''}&p2=${params.get('P2')??''}&p3=${params.get('P3')??''}&flag=${targetFlag}`
+    // SP returns HTML like: <a href="../Admission/ConfirmAdmission.aspx?P1=101066&P2=...&R1=1&C1=1001">
+    // Extract the href query string params P1, P2, C1, R1
+    const hrefMatch = proceedUrl.match(/href\s*=\s*["']?([^"'\s>]+)/i)
+    if (!hrefMatch) return
+    const href    = hrefMatch[1]
+    const qsMatch = href.match(/\?(.+)$/)
+    if (!qsMatch) return
+    const params = new URLSearchParams(qsMatch[1])
+    const p1 = params.get('P1') ?? ''
+    const p2 = params.get('P2') ?? ''
+    const c1 = params.get('C1') ?? ''
+    const r1 = params.get('R1') ?? ''
+    if (!p1 || !c1 || !r1) return
+
+    // Route each flag to its correct page — mirrors old project's href targets
+    const routeMap = {
+      ConfirmAdmission                 : '/college/admission/summary',
+      CancelAdmission                  : '/college/admission/summary',
+      PrintAdmissionLetter             : '/college/admission/letter',
+      PrintAdmissionCancellationLetter : '/college/admission/cancellation-letter-print',
+      PrintAdmissionRejectionLetter    : '/college/admission/rejection-letter-print',
     }
+    const targetPath = routeMap[flag] ?? '/college/admission/summary'
+    window.location.href = `${targetPath}?p1=${p1}&p2=${p2}&c1=${c1}&r1=${r1}&flag=${flag}`
   }
 
   const msgStyle = message.type === 'error'
@@ -177,7 +194,7 @@ export default function CheckApplicationID() {
                     <select
                       value={phaseID}
                       onChange={e => { setPhaseID(e.target.value); setFieldErrors(p=>({...p,phaseID:''})) }}
-                      disabled={!isAdmin}
+                      disabled={!isAdmin || phases.length === 0}
                       style={{ width:'100%', paddingLeft:40, paddingRight:14, paddingTop:11, paddingBottom:11, border:`1.5px solid ${fieldErrors.phaseID?'#fca5a5':'#e2e8f0'}`, borderRadius:10, fontSize:14, background:!isAdmin?'#f1f5f9':'#f8fafc', fontFamily:'inherit', outline:'none', boxSizing:'border-box', fontWeight:600, color:!isAdmin?'#94a3b8':'#0f172a', cursor:!isAdmin?'not-allowed':'pointer', appearance:'none' }}>
                       <option value="-1">Select Round</option>
                       {phases.map(p => <option key={p.value} value={p.value}>{p.text}</option>)}

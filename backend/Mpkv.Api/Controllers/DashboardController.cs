@@ -19,7 +19,7 @@ namespace Mpkv.Api.Controllers
             return long.TryParse(sub, out var id) ? id : 0;
         }
 
-        [HttpGet]             public IActionResult GetDashboard() { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); var loginId = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName) ?? User.FindFirstValue("unique_name") ?? ""; return Ok(_dashboardService.GetDashboard(id, loginId)); }
-        [HttpGet("progress")] public IActionResult GetProgress()  { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); var loginId = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.UniqueName) ?? User.FindFirstValue("unique_name") ?? ""; return Ok(_dashboardService.GetDashboard(id, loginId)); }
+        [HttpGet]             public IActionResult GetDashboard() { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); var loginId = User.FindFirstValue(ClaimTypes.Name) ?? ""; return Ok(_dashboardService.GetDashboard(id, loginId)); }
+        [HttpGet("progress")] public IActionResult GetProgress()  { var id = GetCandidateID(); if (id <= 0) return Unauthorized(); var loginId = User.FindFirstValue(ClaimTypes.Name) ?? ""; return Ok(_dashboardService.GetDashboard(id, loginId)); }
     }
 }
