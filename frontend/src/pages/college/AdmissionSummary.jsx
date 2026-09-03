@@ -28,6 +28,33 @@ import { admissionApi } from '../../services/api'
 // DocumentIDs that do NOT need DocumentNo + IssueDate on upload
 const NO_DOC_INFO_IDS = [1, 2, 4, 14, 15, 19]
 
+/**
+ * PdfViewer — renders a PDF inline via backend proxy.
+ * The proxy fetches the blob and returns it with Content-Disposition: inline
+ * so the browser displays it instead of downloading it.
+ */
+function PdfViewer({ url, name }) {
+  if (!url) return (
+    <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b', fontSize:13 }}>
+      <div style={{ textAlign:'center' }}>
+        <i className="fas fa-file-slash" style={{ fontSize:32, display:'block', marginBottom:8, color:'#94a3b8' }}/>
+        No document available.
+      </div>
+    </div>
+  )
+
+  // Route through backend proxy → forces Content-Disposition: inline
+  const proxyUrl = `/api/file/preview?url=${encodeURIComponent(url)}`
+
+  return (
+    <iframe
+      src={proxyUrl}
+      title={name}
+      style={{ width:'100%', height:'100%', border:'none', display:'block', minHeight:0 }}
+    />
+  )
+}
+
 function resolveDocUrl(url) {
   if (!url) return ''
   let cur = url
@@ -416,7 +443,7 @@ export default function AdmissionSummary() {
                         {/* Document Name — red * for compulsory */}
                         <td style={{ padding:'10px 12px', fontWeight:600, color:V.text }}>
                           {doc.isDocumentCompulsory === 'YES' && <span style={{ color:V.red, marginRight:2 }}>*</span>}
-                          {doc.documentName}
+                          <span dangerouslySetInnerHTML={{ __html: doc.documentName }} />
                         </td>
 
                         {/* Upload button */}
@@ -522,17 +549,18 @@ export default function AdmissionSummary() {
           Right: iframe with document
          ════════════════════════════════════════════════════════════════════ */}
       {viewModal && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.65)', zIndex:9000, display:'flex', flexDirection:'column' }}>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.65)', zIndex:9000, display:'flex', flexDirection:'column', overflow:'hidden' }}>
           {/* Modal header */}
           <div style={{ background:V.navy, padding:'10px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
-            <h6 style={{ color:'#fff', margin:0, fontWeight:700, fontSize:15 }}>{viewModal.documentName}</h6>
+            <h6 style={{ color:'#fff', margin:0, fontWeight:700, fontSize:15 }}
+              dangerouslySetInnerHTML={{ __html: viewModal.documentName }} />
             <button onClick={() => setViewModal(null)}
               style={{ background:'#dc2626', color:'#fff', border:'none', padding:'4px 12px', borderRadius:5, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
               ✕
             </button>
           </div>
-          {/* Modal body */}
-          <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+          {/* Modal body — fixed height so flex children fill the space */}
+          <div style={{ flex:1, display:'flex', overflow:'hidden', minHeight:0 }}>
             {/* Left panel: candidate info + accept/reject */}
             <div style={{ width:320, flexShrink:0, background:'#fff', borderRight:`1px solid ${V.border}`, overflowY:'auto', padding:'16px' }}>
               {data && (
@@ -581,12 +609,9 @@ export default function AdmissionSummary() {
                 </button>
               </div>
             </div>
-            {/* Right panel: iframe */}
-            <div style={{ flex:1, overflow:'hidden' }}>
-              <iframe
-                src={resolveDocUrl(viewModal.documentUploadedURL)}
-                title={viewModal.documentName}
-                style={{ width:'100%', height:'100%', border:'none' }}/>
+            {/* Right panel: PDF viewer via backend proxy */}
+            <div style={{ flex:1, overflow:'hidden', minHeight:0, height:'100%' }}>
+              <PdfViewer url={resolveDocUrl(viewModal.documentUploadedURL)} name={viewModal.documentName} />
             </div>
           </div>
         </div>
