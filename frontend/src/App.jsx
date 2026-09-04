@@ -72,6 +72,17 @@ import AdminDashboard        from './pages/admin/Dashboard'
 import AdminCollegeList      from './pages/admin/CollegeList'
 import AdminCollegePasswords from './pages/admin/CollegePasswords'
 import AdminResetPassword    from './pages/admin/ResetCollegePassword'
+import ManageMenu            from './pages/admin/ManageMenu'
+import ManageMenus           from './pages/admin/ManageMenus'
+import ManageGroups          from './pages/admin/ManageGroups'
+import ManageLinks           from './pages/admin/ManageLinks'
+import AddEditMenu           from './pages/admin/AddEditMenu'
+import AddEditLink           from './pages/admin/AddEditLink'
+import MenuHome              from './pages/admin/MenuHome'
+import ManageNotifications   from './pages/admin/ManageNotifications'
+import AddEditNotification   from './pages/admin/AddEditNotification'
+import ManageActivityStatus  from './pages/admin/ManageActivityStatus'
+import ManageAdmissionSchedule from './pages/admin/ManageAdmissionSchedule'
 
 
 
@@ -245,6 +256,19 @@ export default function App() {
         <Route path="/admin/college/edit"           element={C([11,12], CollegeLayout, CollegeEdit)} />
         <Route path="/admin/college/passwords"      element={C([11,12], CollegeLayout, AdminCollegePasswords)} />
         <Route path="/admin/college/reset-password" element={C([11,12], CollegeLayout, AdminResetPassword)} />
+        {/* Notifications management */}
+        <Route path="/admin/notifications"              element={C([11,12], CollegeLayout, ManageNotifications)}   />
+        <Route path="/admin/notifications/add"          element={C([11,12], CollegeLayout, AddEditNotification)}   />
+        <Route path="/admin/notifications/edit/:id"     element={C([11,12], CollegeLayout, AddEditNotification)}   />
+        {/* Activity Status management */}
+        <Route path="/admin/activity-status"            element={C([11,12], CollegeLayout, ManageActivityStatus)}  />
+        <Route path="/admin/admission-schedule"         element={C([11,12], CollegeLayout, ManageAdmissionSchedule)}/>
+        <Route path="/admin/menu"                       element={C([11,12], CollegeLayout, MenuHome)}    />
+        <Route path="/admin/menu/menus"                 element={C([11,12], CollegeLayout, ManageMenus)} />
+        <Route path="/admin/menu/groups"                element={C([11,12], CollegeLayout, ManageGroups)}/>
+        <Route path="/admin/menu/links"                 element={C([11,12], CollegeLayout, ManageLinks)} />
+        <Route path="/admin/menu/add-edit"              element={C([11,12], CollegeLayout, AddEditMenu)} />
+        <Route path="/admin/menu/add-edit-link"         element={C([11,12], CollegeLayout, AddEditLink)} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

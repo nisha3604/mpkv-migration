@@ -82,6 +82,9 @@ builder.Services.AddScoped<ICheckApplicationIDService, CheckApplicationIDService
 builder.Services.AddScoped<ICounsellingService, CounsellingService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IActivityStatusService, ActivityStatusService>();
 
 builder.Services.AddHttpClient();  // for NSDL polling
 

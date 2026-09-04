@@ -211,4 +211,44 @@ export const profileApi = {
   saveProfile : (data) => api.post('/profile', data),
 }
 
+// ── Menu ─────────────────────────────────────────────────────────────────────
+export const menuApi = {
+  // Navbar — logged-in users (reads UserTypeID from JWT)
+  getMenu        : (lang = '')        => api.get(`/menu${lang ? `?lang=${lang}` : ''}`),
+  // Public navbar
+  getPublicMenu  : (lang = '')        => api.get(`/menu/public${lang ? `?lang=${lang}` : ''}`),
+
+  // Admin — menu management
+  getMenusList   : (userTypeId, parentMenuId = 0) => api.get(`/menu/admin/list?userTypeId=${userTypeId}&parentMenuId=${parentMenuId}`),
+  getMenuDetails : (menuId)           => api.get(`/menu/admin/${menuId}`),
+  saveMenu       : (data)             => api.post('/menu/admin', data),
+  deleteMenu     : (menuId)           => api.delete(`/menu/admin/${menuId}`),
+  reorderMenus   : (data)             => api.post('/menu/admin/reorder', data),
+  getGroups      : (userTypeId)       => api.get(`/menu/admin/groups?userTypeId=${userTypeId}`),
+  getAvailable   : (userTypeId, parentMenuId = 0) => api.get(`/menu/admin/available?userTypeId=${userTypeId}&parentMenuId=${parentMenuId}`),
+  getLinks       : (directory = '')   => api.get(`/menu/admin/links${directory ? `?directory=${directory}` : ''}`),
+  getLinkDetails : (linkId)           => api.get(`/menu/admin/links/${linkId}`),
+  saveLink       : (data)             => api.post('/menu/admin/links', data),
+}
+
+// ── Notifications (Admin) ──────────────────────────────────────────────────────
+export const notificationApi = {
+  getList       : ()           => api.get('/admin/notifications'),
+  getCategories : ()           => api.get('/admin/notifications/categories'),
+  getDetails    : (id)         => api.get(`/admin/notifications/${id}`),
+  save          : (data)       => api.post('/admin/notifications', data),
+  delete        : (id)         => api.delete(`/admin/notifications/${id}`),
+  uploadFile    : (formData)   => api.post('/admin/notifications/upload-file', formData, { headers:{ 'Content-Type':'multipart/form-data' } }),
+}
+
+// ── Activity Status (Admin) ───────────────────────────────────────────────────
+export const activityApi = {
+  getList            : ()       => api.get('/admin/activity-status'),
+  getDetails         : (name)   => api.get(`/admin/activity-status/${encodeURIComponent(name)}`),
+  save               : (data)   => api.post('/admin/activity-status', data),
+  getAdmissionList   : ()       => api.get('/admin/activity-status/admission/list'),
+  getAdmissionDetails: (phaseId)=> api.get(`/admin/activity-status/admission/${phaseId}`),
+  saveAdmission      : (data)   => api.post('/admin/activity-status/admission', data),
+}
+
 export default api

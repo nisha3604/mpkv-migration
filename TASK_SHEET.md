@@ -116,30 +116,41 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.7 | Backend: `Menu_GetMenu` SP endpoint (`GET /api/menu`) | ⬜ | SP already exists in DB |
-| 5.8 | CandidateNavbar — replace hardcoded menus with API-driven | ⬜ | Fetch from Menu_GetMenu SP |
-| 5.9 | CollegeLayout navbar — replace hardcoded menus with API-driven | ⬜ | |
-| 5.10 | Admin superadmin menu management UI (add/edit/delete menu items) | ⬜ | |
-| 5.11 | Menu scheduling — hide/show items based on activity dates | ⬜ | |
+| 5.7 | Backend: `Menu_GetMenu` SP endpoint (`GET /api/menu`) | ✅ | MenuController + MenuService — also full admin CRUD |
+| 5.8 | Backend: Menu models (MenuModels.cs) | ✅ | Request/response DTOs for all menu SP calls |
+| 5.9 | Frontend: `menuApi` calls in api.js | ✅ | getMenu, admin CRUD, links, groups, available |
+| 5.10 | Frontend: `menuUrlMap.js` — old ASP.NET URLs → React routes | ✅ | mapUrl() + isGroupItem() utility |
+| 5.11 | CandidateNavbar — replace hardcoded menus with API-driven | ✅ | Fetches from Menu_GetMenu, renders tree dynamically |
+| 5.12 | CollegeLayout navbar — replace hardcoded menus with API-driven | ✅ | Same pattern, old NavItem/DropdownItem components removed |
+| 5.13 | Admin: ManageMenus.jsx (UserType+Group+SeqNo+IsActive+Save) | ✅ | Exact old project functionality, new theme |
+| 5.14 | Admin: ManageGroups.jsx, ManageLinks.jsx | ✅ | Mirror ManageGroups.aspx + ManageLinks.aspx |
+| 5.15 | Admin: AddEditMenu.jsx, AddEditLink.jsx | ✅ | Mirror AddEditMenus.aspx + AddEditLinks.aspx |
+| 5.16 | Admin: MenuHome.jsx — 3-button landing page | ✅ | Mirror MenuHome.aspx |
+| 5.17 | App.jsx: all menu routes wired | ✅ | /admin/menu, /menus, /groups, /links, /add-edit, /add-edit-link |
+| 5.18 | Menu scheduling — hide/show items based on activity dates | ✅ | Handled server-side by SP date window filter |
 
 ### 5C — Notifications & Home Page Content Management
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.12 | Manage Notifications (CRUD — category, title EN+MR, dates, file/text content) | ⬜ | SP: Administration_SaveNotification (18 params) |
-| 5.13 | Notification categories management | ⬜ | Master_NotificationCategory |
-| 5.14 | Bilingual content (English + Marathi) for notifications | ⬜ | |
-| 5.15 | File upload to Azure Blob for notification attachments | ⬜ | Container: `notifications` |
-| 5.16 | Home page live refresh after notification save/delete | ⬜ | Old: Global.Notification reload |
+| 5.20 | Backend: NotificationModels.cs | ✅ | Request/response DTOs for all notification SPs |
+| 5.21 | Backend: NotificationService.cs (GetList, GetDetails, GetCategories, Save, Delete, UploadFile) | ✅ | All SP calls + date parsing |
+| 5.22 | Backend: NotificationController.cs — CRUD + file upload | ✅ | GET/POST/DELETE + multipart upload |
+| 5.23 | Backend: Register NotificationService in DI | ✅ | Program.cs |
+| 5.24 | Frontend: notificationApi in api.js | ✅ | getList, getCategories, getDetails, save, delete, uploadFile |
+| 5.25 | Frontend: ManageNotifications.jsx — list with category filter tabs, status badges, search | ✅ | User-friendly — category tabs, status filter, inline delete confirm |
+| 5.26 | Frontend: AddEditNotification.jsx — add/edit form with card category picker, file upload zone | ✅ | Category card picker, drag-style upload, NEW badge preview, date helpers |
+| 5.27 | App.jsx: notification routes wired | ✅ | /admin/notifications, /add, /edit/:id |
+| 5.28 | Admin Dashboard: Notifications card added | ✅ | 5th card with red bell icon |
 
 ### 5D — Activity Status (Scheduling)
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.17 | Manage Activity Status — view all activities with open/close dates | ⬜ | SP: Administration_GetActivityStatusList |
-| 5.18 | Edit activity window (start/end datetime) | ⬜ | SP: Administration_SaveActivityStatusDetails |
-| 5.19 | Manage Admission Activity Status (per phase) | ⬜ | SP: Administration_GetAdmissionActivityStatusList |
-| 5.20 | Edit admission phase dates (AllotmentDisplayStart, AdmissionStart, etc.) | ⬜ | SP: Administration_SaveAdmissionActivityStatusDetails |
+| 5.17 | Backend: ActivityStatusService + Controller + Models | ✅ | All 6 SPs, DI registered |
+| 5.18 | Frontend: ManageActivityStatus.jsx — card grid, inline edit, OPEN/CLOSED badge | ✅ | Days remaining indicator |
+| 5.19 | Frontend: ManageAdmissionSchedule.jsx — per-phase inline editing | ✅ | Current Round badge |
+| 5.20 | App.jsx routes + Dashboard cards | ✅ | /admin/activity-status, /admin/admission-schedule |
 
 ### 5E — Phase Management
 
