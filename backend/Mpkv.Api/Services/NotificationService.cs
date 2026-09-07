@@ -1,4 +1,6 @@
 using Dapper;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Mpkv.Api.Data;
 using Mpkv.Api.Models.Admin;
 
@@ -173,7 +175,9 @@ namespace Mpkv.Api.Services
             catch (Exception ex) { return new SaveNotificationResponse { Success=false, Message=ex.Message }; }
         }
 
-        // ── FILE UPLOAD ───────────────────────────────────────────────────────
+        // ── FILE UPLOAD — Azure Blob (notifications container) ───────────────
+        // Mirrors Helper.UploadFilesToBlobPublic() from old project
+        // Container: "notifications" under FileMainContainer/FileProject
         public async Task<string> UploadFile(IFormFile file, int categoryId)
         {
             try
@@ -181,12 +185,37 @@ namespace Mpkv.Api.Services
                 var ext      = System.IO.Path.GetExtension(file.FileName).ToLower();
                 var guid     = Guid.NewGuid().ToString("N")[..8];
                 var fileName = $"{categoryId}_{guid}{ext}";
-                var folder   = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "notifications");
+
+                // Try Azure Blob first
+                var connStr   = _config["AzureBlob:StorageConnectionString"] ?? "";
+                var container = "notifications";  // public container — same as old project
+                var storageUrl = _config["AzureBlob:StorageURL"] ?? "";
+
+                if (!string.IsNullOrWhiteSpace(connStr) && !connStr.Contains("REPLACE"))
+                {
+                    try
+                    {
+                        var blobSvc        = new BlobServiceClient(connStr);
+                        var containerClient= blobSvc.GetBlobContainerClient(container);
+                        await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+                        var blobClient     = containerClient.GetBlobClient(fileName);
+                        using var stream   = file.OpenReadStream();
+                        await blobClient.UploadAsync(stream, overwrite: true);
+                        // Return full public Azure URL
+                        return $"{storageUrl.TrimEnd('/')}/{container}/{fileName}";
+                    }
+                    catch { /* fall through to local */ }
+                }
+
+                // Fallback — save to wwwroot/uploads/notifications and serve via controller endpoint
+                var folder = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "notifications");
                 Directory.CreateDirectory(folder);
                 var path = System.IO.Path.Combine(folder, fileName);
-                using var stream = new System.IO.FileStream(path, System.IO.FileMode.Create);
-                await file.CopyToAsync(stream);
-                return $"/uploads/notifications/{fileName}";
+                using (var stream = new System.IO.FileStream(path, System.IO.FileMode.Create))
+                    await file.CopyToAsync(stream);
+
+                // Return URL through the controller endpoint — works without UseStaticFiles
+                return $"/api/admin/notifications/file/{fileName}";
             }
             catch { return ""; }
         }

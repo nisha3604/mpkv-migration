@@ -180,7 +180,7 @@ export default function ManageActivityStatus() {
                       </div>
                     )}
 
-                    {/* Inline edit form */}
+                    {/* Inline edit form — uses defaultValue+onBlur to avoid focus loss on each keystroke */}
                     {isEd && (
                       <div style={{ padding:'14px 16px', background:`${cfg.color}08` }}>
                         <p style={{ fontSize:11, color:V.muted, marginBottom:10, fontWeight:600 }}>
@@ -189,14 +189,18 @@ export default function ManageActivityStatus() {
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
                           <div>
                             <label style={{ display:'block', fontSize:11, fontWeight:600, color:V.muted, marginBottom:4 }}>Start Date/Time</label>
-                            <input value={form.activityStartDateTime}
-                              onChange={e=>setForm(p=>({...p,activityStartDateTime:e.target.value}))}
+                            <input
+                              key={`start-${item.activityName}`}
+                              defaultValue={form.activityStartDateTime}
+                              onBlur={e => setForm(p => ({ ...p, activityStartDateTime: e.target.value }))}
                               placeholder="25-12-2026 09:00" style={inputStyle}/>
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:11, fontWeight:600, color:V.muted, marginBottom:4 }}>End Date/Time</label>
-                            <input value={form.activityEndDateTime}
-                              onChange={e=>setForm(p=>({...p,activityEndDateTime:e.target.value}))}
+                            <input
+                              key={`end-${item.activityName}`}
+                              defaultValue={form.activityEndDateTime}
+                              onBlur={e => setForm(p => ({ ...p, activityEndDateTime: e.target.value }))}
                               placeholder="31-12-2030 23:59" style={inputStyle}/>
                           </div>
                         </div>

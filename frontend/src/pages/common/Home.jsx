@@ -288,7 +288,7 @@ function NotificationRow({ item }) {
             </div>
         }
         {item.isNew && (
-          <img src="/new.gif" alt="new" className="inline ml-1 h-[15px]" />
+          <NewBadge />
         )}
       </div>
     </li>
@@ -307,7 +307,7 @@ function NewsRow({ item }) {
             {item.title}
           </a>
       }
-      {item.isNew && <img src="/new.gif" alt="new" className="inline ml-1 h-[15px]" />}
+      {item.isNew && <NewBadge />}
     </li>
   )
 }
@@ -324,7 +324,77 @@ function DownloadRow({ item }) {
             {item.title}
           </a>
       }
-      {item.isNew && <img src="/new.gif" alt="new" className="inline ml-1 h-[15px]" />}
+      {item.isNew && <NewBadge />}
     </li>
+  )
+}
+
+// ── NEW badge — eye-catching animated badge ───────────────────────────────────
+function NewBadge() {
+  return (
+    <>
+      <style>{`
+        @keyframes newShine {
+          0%   { left: -100%; }
+          100% { left: 200%; }
+        }
+        @keyframes newBounce {
+          0%,100% { transform: translateY(0) scale(1); }
+          30%      { transform: translateY(-3px) scale(1.12); }
+          60%      { transform: translateY(1px) scale(.96); }
+        }
+        @keyframes newGlow {
+          0%,100% { box-shadow: 0 0 6px 1px rgba(255,60,60,.7), 0 2px 8px rgba(220,38,38,.4); }
+          50%      { box-shadow: 0 0 14px 4px rgba(255,80,80,.9), 0 4px 14px rgba(220,38,38,.6); }
+        }
+        .new-badge-wrap {
+          display: inline-flex;
+          align-items: center;
+          margin-left: 7px;
+          vertical-align: middle;
+          flex-shrink: 0;
+        }
+        .new-badge-inner {
+          position: relative;
+          overflow: hidden;
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          background: linear-gradient(135deg, #ff3b3b 0%, #dc2626 50%, #b91c1c 100%);
+          color: #fff;
+          font-size: 9.5px;
+          font-weight: 900;
+          letter-spacing: .1em;
+          padding: 2px 7px 2px 5px;
+          border-radius: 4px;
+          animation: newBounce 1.8s ease-in-out infinite, newGlow 1.8s ease-in-out infinite;
+          line-height: 1.4;
+          cursor: default;
+          user-select: none;
+        }
+        .new-badge-inner::before {
+          content: '';
+          position: absolute;
+          top: 0; left: -100%;
+          width: 60%; height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+          animation: newShine 2.2s ease-in-out infinite;
+        }
+        .new-badge-dot {
+          width: 5px; height: 5px;
+          background: #fff;
+          border-radius: 50%;
+          display: inline-block;
+          animation: newBounce 1.8s ease-in-out infinite .15s;
+          flex-shrink: 0;
+        }
+      `}</style>
+      <span className="new-badge-wrap">
+        <span className="new-badge-inner">
+          <span className="new-badge-dot" />
+          NEW
+        </span>
+      </span>
+    </>
   )
 }

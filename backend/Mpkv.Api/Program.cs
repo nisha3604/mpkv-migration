@@ -99,6 +99,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("ReactApp");
+app.UseStaticFiles();   // serves wwwroot/uploads/* for local file fallback
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

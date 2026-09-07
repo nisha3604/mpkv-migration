@@ -111,17 +111,20 @@ export default function AddEditLink() {
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
             <F label="Link Name (English)" required>
-              <input value={form.linkName} onChange={e => setForm(p=>({...p,linkName:e.target.value}))}
+              <input key={`name-${form.linkID}`} defaultValue={form.linkName}
+                onBlur={e => setForm(p=>({...p,linkName:e.target.value}))}
                 placeholder="e.g. Personal Details" style={inputStyle}/>
             </F>
             <F label="Link Name (Marathi)">
-              <input value={form.linkNameMarathi} onChange={e => setForm(p=>({...p,linkNameMarathi:e.target.value}))}
+              <input key={`nameMr-${form.linkID}`} defaultValue={form.linkNameMarathi}
+                onBlur={e => setForm(p=>({...p,linkNameMarathi:e.target.value}))}
                 placeholder="मराठी नाव" style={inputStyle}/>
             </F>
           </div>
 
           <F label="Link URL" required hint="Use '#' for group headers. For React routes: /candidate/personal">
-            <input value={form.linkURL} onChange={e => setForm(p=>({...p,linkURL:e.target.value}))}
+            <input key={`url-${form.linkID}`} defaultValue={form.linkURL}
+              onBlur={e => setForm(p=>({...p,linkURL:e.target.value}))}
               placeholder="/candidate/personal" style={inputStyle}/>
           </F>
 
@@ -151,11 +154,13 @@ export default function AddEditLink() {
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
             <F label="Description (English)">
-              <input value={form.linkDescription} onChange={e => setForm(p=>({...p,linkDescription:e.target.value}))}
+              <input key={`desc-${form.linkID}`} defaultValue={form.linkDescription}
+                onBlur={e => setForm(p=>({...p,linkDescription:e.target.value}))}
                 placeholder="Short description" style={inputStyle}/>
             </F>
             <F label="Description (Marathi)">
-              <input value={form.linkDescriptionMarathi} onChange={e => setForm(p=>({...p,linkDescriptionMarathi:e.target.value}))}
+              <input key={`descMr-${form.linkID}`} defaultValue={form.linkDescriptionMarathi}
+                onBlur={e => setForm(p=>({...p,linkDescriptionMarathi:e.target.value}))}
                 placeholder="मराठी वर्णन" style={inputStyle}/>
             </F>
           </div>

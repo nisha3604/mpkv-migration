@@ -37,6 +37,20 @@ const defaultEndDate = () => {
   return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()} 23:59`
 }
 
+// Defined outside the component so React sees a stable reference across re-renders.
+// If defined inside, every render creates a new function → React unmounts/remounts
+// the input on each keystroke → focus is lost after typing one character.
+const F = ({ label, required, error: err, hint, children }) => (
+  <div style={{ marginBottom:18 }}>
+    <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#475569', marginBottom:6 }}>
+      {label}{required && <span style={{ color:'#dc2626' }}> *</span>}
+    </label>
+    {children}
+    {err && <p style={{ fontSize:11, color:'#dc2626', marginTop:4, display:'flex', alignItems:'center', gap:4 }}><i className="fas fa-exclamation-circle"/>{err}</p>}
+    {hint && !err && <p style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>{hint}</p>}
+  </div>
+)
+
 export default function AddEditNotification() {
   const { id }     = useParams()
   const navigate   = useNavigate()
@@ -136,16 +150,6 @@ export default function AddEditNotification() {
     finally { setSaving(false) }
   }
 
-  const F = ({ label, required, error: err, hint, children }) => (
-    <div style={{ marginBottom:18 }}>
-      <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#475569', marginBottom:6 }}>
-        {label}{required && <span style={{ color:'#dc2626' }}> *</span>}
-      </label>
-      {children}
-      {err && <p style={{ fontSize:11, color:'#dc2626', marginTop:4, display:'flex', alignItems:'center', gap:4 }}><i className="fas fa-exclamation-circle"/>{err}</p>}
-      {hint && !err && <p style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>{hint}</p>}
-    </div>
-  )
 
   const inputStyle = (hasErr) => ({
     width:'100%', padding:'9px 12px', boxSizing:'border-box',

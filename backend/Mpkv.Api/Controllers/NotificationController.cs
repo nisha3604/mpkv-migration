@@ -78,5 +78,32 @@ namespace Mpkv.Api.Controllers
                 return BadRequest(new { success=false, message="Upload failed." });
             return Ok(new { success=true, url, fileName=file.FileName });
         }
+
+        // GET /api/admin/notifications/file/{fileName} — PUBLIC (no auth)
+        // Serves notification files from local wwwroot/uploads/notifications/
+        // Used as fallback when Azure Blob is not available
+        [HttpGet("file/{fileName}")]
+        [AllowAnonymous]
+        public IActionResult ServeFile(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains(".."))
+                return BadRequest();
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "notifications");
+            var path   = Path.Combine(folder, fileName);
+            if (!System.IO.File.Exists(path)) return NotFound();
+            var ext = Path.GetExtension(fileName).ToLower();
+            var mime = ext switch
+            {
+                ".pdf"  => "application/pdf",
+                ".doc"  => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls"  => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png"  => "image/png",
+                _       => "application/octet-stream"
+            };
+            return PhysicalFile(path, mime, enableRangeProcessing: true);
+        }
     }
 }

@@ -152,7 +152,10 @@ export default function ManageAdmissionSchedule() {
                                 <i className={`fas ${f.icon}`} style={{ color:f.color }}/>
                                 {f.label}
                               </label>
-                              <input value={form[f.key]||''} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))}
+                              <input
+                                key={`${f.key}-${phase.phaseID}`}
+                                defaultValue={form[f.key]||''}
+                                onBlur={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                                 placeholder="dd-MM-yyyy HH:mm" style={inputStyle}/>
                             </div>
                           ))}

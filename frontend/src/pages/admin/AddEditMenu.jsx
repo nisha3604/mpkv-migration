@@ -154,15 +154,19 @@ export default function AddEditMenu() {
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
             <F label="Display Start Date Time" required>
-              <input type="text" value={form.displayStartDateTime}
+              <input type="text"
+                key={`start-${form.menuID}`}
+                defaultValue={form.displayStartDateTime}
                 placeholder="dd-MM-yyyy HH:mm"
-                onChange={e => setForm(p => ({ ...p, displayStartDateTime: e.target.value }))}
+                onBlur={e => setForm(p => ({ ...p, displayStartDateTime: e.target.value }))}
                 style={inputStyle}/>
             </F>
             <F label="Display End Date Time" required>
-              <input type="text" value={form.displayEndDateTime}
+              <input type="text"
+                key={`end-${form.menuID}`}
+                defaultValue={form.displayEndDateTime}
                 placeholder="dd-MM-yyyy HH:mm"
-                onChange={e => setForm(p => ({ ...p, displayEndDateTime: e.target.value }))}
+                onBlur={e => setForm(p => ({ ...p, displayEndDateTime: e.target.value }))}
                 style={inputStyle}/>
             </F>
           </div>

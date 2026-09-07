@@ -165,8 +165,11 @@ export default function ManageGroups() {
                           style={{ width:16, height:16, cursor:'pointer', accentColor:'#059669' }}/>
                       </td>
                       <td style={tdS}>
-                        <input type="text" value={row.seqInput} disabled={!row.checked}
-                          onChange={e=>setRows(prev=>prev.map(r=>r.menuID===row.menuID?{...r,seqInput:e.target.value}:r))}
+                        <input type="text"
+                          key={`seq-${row.menuID}-${row.seqInput}`}
+                          defaultValue={row.seqInput}
+                          disabled={!row.checked}
+                          onBlur={e=>setRows(prev=>prev.map(r=>r.menuID===row.menuID?{...r,seqInput:e.target.value}:r))}
                           style={{ width:52, textAlign:'center', padding:'4px 6px', border:'1px solid #dee2e6', borderRadius:5, fontSize:13, background:row.checked?'#fff':'#f8fafc', cursor:row.checked?'text':'not-allowed' }}/>
                       </td>
                     </tr>
