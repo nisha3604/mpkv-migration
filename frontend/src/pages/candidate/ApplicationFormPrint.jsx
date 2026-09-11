@@ -50,8 +50,9 @@ export default function ApplicationFormPrint() {
   }, [appIdParam])
 
   // Auto-print once data loaded — mirrors body onload="PrintWindow()"
+  // Only auto-print for candidate (no appIdParam). Admin view shows a Print button instead.
   useEffect(() => {
-    if (!loading && data) {
+    if (!loading && data && !appIdParam) {
       setTimeout(() => window.print(), 300)
     }
   }, [loading, data])

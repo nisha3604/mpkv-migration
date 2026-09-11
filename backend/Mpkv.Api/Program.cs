@@ -91,6 +91,7 @@ builder.Services.AddScoped<IReportBuilderService, ReportBuilderService>();
 builder.Services.AddScoped<ICandidateUtilsService, CandidateUtilsService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IEvcService, EvcService>();
+builder.Services.AddScoped<IPhaseService, PhaseService>();
 builder.Services.AddScoped<IEVerificationService, EVerificationService>();
 
 builder.Services.AddHttpClient();  // for NSDL polling

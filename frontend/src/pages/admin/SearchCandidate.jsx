@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { candidateUtilsApi } from '../../services/api'
 
 /**
  * SearchCandidate — mirrors Admin/SearchCandidate.aspx.
- * Search by: ApplicationID | CandidateName | MobileNo | EMailID
- * Shows read-only grid of results.
+ * Also used as the entry point for Change Mobile/Email, Change Security Question,
+ * Check Payment History, Print Application Form — admin searches for candidate first,
+ * then views their full application where those actions are available.
  * SP: Base_SearchCandidate(@SearchCandidateBy, @SearchQuery)
  */
 const SEARCH_OPTIONS = [
@@ -15,8 +16,18 @@ const SEARCH_OPTIONS = [
   { value:'EMailID',       label:'Registered E-Mail ID'   },
 ]
 
+// Context hints shown at top depending on which menu item navigated here
+const ACTION_HINTS = {
+  '/admin/candidates/change-mobile':     { icon:'fa-mobile-alt',  color:'#0ea5e9', text:'Change Mobile No. / E-Mail ID — search for the candidate first, then use the action from their application view.' },
+  '/admin/candidates/change-security':   { icon:'fa-key',         color:'#7c3aed', text:'Change Security Question — search for the candidate first, then use the action from their application view.' },
+  '/admin/candidates/payment-history':   { icon:'fa-rupee-sign',  color:'#059669', text:'Check Payment History — search for the candidate first to view their payment records.' },
+  '/admin/candidates/print-application': { icon:'fa-print',       color:'#2563eb', text:'Print Application Form — search for the candidate first, then print from their application view.' },
+}
+
 export default function SearchCandidate() {
   const navigate     = useNavigate()
+  const location     = useLocation()
+  const hint         = ACTION_HINTS[location.pathname]
   const [searchBy,   setSearchBy]   = useState('ApplicationID')
   const [searchText, setSearchText] = useState('')
   const [items,      setItems]      = useState([])
@@ -47,6 +58,14 @@ export default function SearchCandidate() {
   return (
     <div style={{ fontFamily:'inherit', background:V.bg, minHeight:'100vh', padding:'20px 28px' }}>
       <div style={{ maxWidth:1280, margin:'0 auto' }}>
+
+        {/* Action context hint — shown when navigated from a specific menu item */}
+        {hint && (
+          <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:7, padding:'10px 16px', marginBottom:16, fontSize:13, display:'flex', alignItems:'center', gap:10, color:'#1e40af' }}>
+            <i className={`fas ${hint.icon}`} style={{ color:hint.color, fontSize:15, flexShrink:0 }}/>
+            {hint.text}
+          </div>
+        )}
 
         {/* Search form */}
         <div style={{ border:`1px solid ${V.border}`, borderRadius:8, marginBottom:20, boxShadow:'0 1px 6px rgba(0,0,0,.06)', overflow:'hidden' }}>

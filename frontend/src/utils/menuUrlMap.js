@@ -55,8 +55,10 @@ const URL_MAP = [
   { old: 'college/resetcollegepassword.aspx',               to: '/admin/college/reset-password'         },
   { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidates/search'              },
   { old: 'flag=resetcandidatepassword',                     to: '/admin/candidates/reset-password'      },
-  { old: 'flag=checkpaymenthistory',                        to: '/admin/candidate/payment-history'      },
-  { old: 'flag=printapplicationform',                       to: '/candidate/application-form/print'     },
+  { old: 'flag=checkpaymenthistory',                        to: '/admin/candidates/payment-history'     },
+  { old: 'flag=printapplicationform',                       to: '/admin/candidates/print-application'   },
+  { old: 'flag=changemobilemail',                           to: '/admin/candidates/change-mobile'       },
+  { old: 'flag=changesecurityquestion',                     to: '/admin/candidates/change-security'     },
   { old: 'administration/managenotifications.aspx',         to: '/admin/notifications'              },
   { old: 'administration/manageactivitystatus.aspx',        to: '/admin/activity-status'                },
   { old: 'administration/manageadmissionschedule.aspx',     to: '/admin/admission-schedule'             },
@@ -65,6 +67,7 @@ const URL_MAP = [
   { old: 'administration/managereports.aspx',               to: '/admin/reports'                        },
   { old: 'administration/manageevc.aspx',                   to: '/admin/evc'                            },
   { old: 'administration/managesubevc.aspx',                to: '/admin/sub-evc'                        },
+  { old: 'administration/managephase.aspx',                 to: '/admin/phases'                         },
 
   // ── EVerification ──────────────────────────────────────────────────────────
   { old: 'everification/candidatelistforeverification.aspx', to: '/everification/candidates'              },
@@ -74,8 +77,6 @@ const URL_MAP = [
 
   // ── EVC Application Form menu (via Admin/CheckApplicationID.aspx flags) ───
   { old: 'flag=everification',                               to: '/everification/check'                   },
-  { old: 'flag=changemobilemail',                            to: '/everification/candidate-action/change-mobile' },
-  { old: 'flag=changesecurityquestion',                      to: '/everification/candidate-action/change-security' },
   { old: 'flag=checkdocumentverificationstatus',             to: '/everification/candidate-action/doc-status'     },
   { old: 'admin/checkapplicationid.aspx',                    to: '/everification/candidate-action'        },
 

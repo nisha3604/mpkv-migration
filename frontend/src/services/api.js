@@ -244,6 +244,14 @@ export const notificationApi = {
   uploadFile    : (formData)   => api.post('/admin/notifications/upload-file', formData, { headers:{ 'Content-Type':'multipart/form-data' } }),
 }
 
+// ── Phase Management (Admin) ──────────────────────────────────────────────────
+export const phaseApi = {
+  getList    : ()       => api.get('/admin/phases'),
+  getDetails : (id)     => api.get(`/admin/phases/${id}`),
+  save       : (data)   => api.post('/admin/phases', data),
+  delete     : (id)     => api.delete(`/admin/phases/${id}`),
+}
+
 // ── Activity Status (Admin) ───────────────────────────────────────────────────
 export const activityApi = {
   getList            : ()       => api.get('/admin/activity-status'),

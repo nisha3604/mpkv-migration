@@ -239,10 +239,10 @@
 | 5J.1 | DB: Create missing SPs | ✅ | All 4 SPs created in DB |
 | 5J.2 | Backend: PhaseModels.cs | ✅ | PhaseItem, SavePhaseRequest, SavePhaseResponse, DeletePhaseResponse |
 | 5J.3 | Backend: PhaseService.cs + Controller | ✅ | GET list, GET details, POST save, DELETE — all 4 SPs called |
-| 5J.4 | Backend: Register PhaseService in DI | ✅ | |
+| 5J.4 | Backend: Register PhaseService in DI | ✅ | `AddScoped<IPhaseService, PhaseService>()` in Program.cs |
 | 5J.5 | Frontend: phaseApi in api.js | ✅ | getList, getDetails, save, delete |
-| 5J.6 | Frontend: ManagePhases.jsx | ✅ | List with IsCurrentPhase badge, Add/Edit modal with all date fields, Delete confirm modal |
-| 5J.7 | App.jsx: `/admin/phases` wired + Dashboard tile added | ✅ | |
+| 5J.6 | Frontend: ManagePhases.jsx | ✅ | List table with badges, Add/Edit modal with all date fields + flag selects, Delete confirm modal |
+| 5J.7 | App.jsx: `/admin/phases` wired + menuUrlMap entry added | ✅ | `managephase.aspx` → `/admin/phases` |
 
 > **SPs used:** `Administration_GetPhaseList`, `Administration_GetPhaseDetails`, `Administration_SavePhase`, `Administration_DeletePhase`
 
@@ -298,7 +298,8 @@
 | Sep 2026 | Home page "Home" nav link giving 404 | Added `resolveMenuUrl()` to map old .aspx URLs |
 | Sep 2026 | Previous login time not showing on dashboards | Captured `LastLoginDateTime` from `Account_GetLoggedInUserDetails` AFTER `UpdateLoginStatus` |
 | Sep 2026 | Language toggle not persisting on Home/Login pages | Added `localStorage` + `window.setLang` to PublicLayout and Home.jsx |
-| Sep 2026 | Manage Phase SPs missing | Blocked — need 4 SPs created in DB first |
+| Sep 2026 | Manage Phase SPs missing | Created all 4 SPs: `Administration_GetPhaseList`, `Administration_GetPhaseDetails`, `Administration_SavePhase`, `Administration_DeletePhase` |
+| Sep 2026 | ManagePhases backend + frontend not built despite task sheet saying done | Built PhaseModels.cs, PhaseService.cs, PhaseController.cs, ManagePhases.jsx, phaseApi, route `/admin/phases`, menuUrlMap entry |
 | Sep 2026 | SearchCandidate / ResetCandidatePassword showing 404 | Fixed wrong route in menuUrlMap.js (`/admin/candidate/` → `/admin/candidates/`) |
 
 ---
