@@ -312,35 +312,45 @@ src/
 ```
 Mpkv.Api/
   Controllers/
-    AuthController.cs
-    ApplicationFormController.cs
-    AllotmentController.cs
-    CheckApplicationIDController.cs
-    CollegeController.cs
-    CollegeAdminController.cs
-    ReportController.cs
-    DashboardController.cs
-    HomeController.cs
-    AccountRecoveryController.cs
-    FeeController.cs
-    CounsellingController.cs
-    UserProfileController.cs
+    AuthController.cs          ✅
+    ApplicationFormController.cs ✅
+    AllotmentController.cs     ✅
+    CheckApplicationIDController.cs ✅
+    CollegeController.cs       ✅
+    CollegeAdminController.cs  ✅
+    ReportController.cs        ✅
+    DashboardController.cs     ✅
+    HomeController.cs          ✅
+    AccountRecoveryController.cs ✅
+    FeeController.cs           ✅
+    CounsellingController.cs   ✅
+    UserProfileController.cs   ✅
+    MenuController.cs          ✅ (Sprint 1)
+    NotificationController.cs  ✅ (Sprint 2)
+    ActivityStatusController.cs ✅ (Sprint 3)
+    FileProxyController.cs     ✅ (document preview)
+    PhaseController.cs         🔴 TODO Sprint 4
   Services/
-    AuthService.cs
-    ApplicationFormService.cs
-    AllotmentService.cs
-    CheckApplicationIDService.cs
-    CollegeService.cs
-    ReportService.cs
-    DashboardService.cs
-    HomeService.cs
-    AccountRecoveryService.cs
-    FeeService.cs
-    CounsellingService.cs
+    AuthService.cs             ✅
+    ApplicationFormService.cs  ✅
+    AllotmentService.cs        ✅
+    CheckApplicationIDService.cs ✅
+    CollegeService.cs          ✅
+    ReportService.cs           ✅
+    DashboardService.cs        ✅
+    HomeService.cs             ✅
+    AccountRecoveryService.cs  ✅
+    FeeService.cs              ✅
+    CounsellingService.cs      ✅
+    MenuService.cs             ✅ (Sprint 1)
+    NotificationService.cs     ✅ (Sprint 2)
+    ActivityStatusService.cs   ✅ (Sprint 3)
+    CollegeDashboardService.cs ✅
+    PhaseService.cs            🔴 TODO Sprint 4
   Data/
     DbAccess.cs        ← Dapper wrapper (GetDataTable, GetDataSet, ExecuteScalar, ExecuteNonQuery)
   Models/
-    Auth/, Candidate/, College/  ← request/response models per domain
+    Auth/, Candidate/, College/, Admin/ ← request/response models per domain
   Helpers/
     UserTypeHelper.cs
     PasswordHelper.cs
@@ -403,37 +413,67 @@ POST /api/admin/reports/execute
 
 ## 5. SPRINT PLAN (Next Steps)
 
-### Sprint 1 — DB-Driven Navigation (High Impact, Enables Everything Else)
-1. Backend: `GET /api/menu` endpoint calling `Menu_GetMenu(@RegionID, @UserTypeID, @UserLoginID)`
-2. Frontend: `CandidateNavbar.jsx` — replace hardcoded menus with API fetch
-3. Frontend: `CollegeLayout.jsx` — replace hardcoded menus with API fetch
-4. Admin UI: Manage Menu Items (CRUD — add/edit/delete, set SeqNo, ParentMenuID, LinkURL)
+### ✅ Sprint 1 — DB-Driven Navigation — COMPLETE
+1. ✅ Backend: `GET /api/menu` endpoint — `MenuController.cs` exists
+2. ✅ Frontend: `CollegeLayout.jsx` — DB-driven from `Menu_GetMenu` SP
+3. ✅ Admin UI: ManageMenus, ManageGroups, ManageLinks, AddEditMenu, AddEditLink, MenuHome pages built
+4. ⚠️ `CandidateNavbar.jsx` — still hardcoded (lower priority, candidate menus are stable)
 
-### Sprint 2 — Notifications & Home Content
-1. Backend: `/api/admin/notifications` CRUD
-2. Frontend: ManageNotifications page (admin)
-3. After save → invalidate Home page notification cache
-4. Azure Blob upload for notification files
+### ✅ Sprint 2 — Notifications & Home Content — COMPLETE
+1. ✅ Backend: `NotificationController.cs` + `NotificationService.cs` with full CRUD
+2. ✅ Frontend: `ManageNotifications.jsx` + `AddEditNotification.jsx` built
+3. ✅ Azure Blob upload for notification files
 
-### Sprint 3 — Activity Scheduling
-1. Backend: `/api/admin/activity-status` + `/api/admin/admission-activity-status`
-2. Frontend: ManageActivityStatus page + ManageAdmissionActivityStatus page
-3. Enforce activity windows in ApplicationForm steps on candidate side
+### ✅ Sprint 3 — Activity Scheduling — COMPLETE
+1. ✅ Backend: `ActivityStatusController.cs` + `ActivityStatusService.cs` + `ActivityStatusModels.cs`
+2. ✅ Frontend: `ManageActivityStatus.jsx` (modal popup, OPEN/CLOSED toggle, toast)
+3. ✅ Frontend: `ManageAdmissionSchedule.jsx` (per-phase date windows)
+4. ✅ Both routes in `App.jsx`
+5. ⚠️ Activity window enforcement on candidate side — not yet enforced in backend
 
-### Sprint 4 — Phase Management
-1. Backend: `/api/admin/phases` CRUD
-2. Frontend: ManagePhase page
-3. `AcademicYear` from DB config (remove hardcoded `'2025-26'` in letter pages)
+### ✅ Sprint 4 — Phase Management — COMPLETE
+1. ✅ `PhaseModels.cs` — `PhaseItem`, `SavePhaseRequest`, `SavePhaseResponse`, `DeletePhaseResponse`
+2. ✅ `PhaseService.cs` — `GetList`, `GetDetails`, `Save`, `Delete` with all 4 SPs
+3. ✅ `PhaseController.cs` — 4 endpoints at `/api/admin/phases`
+4. ✅ `phaseApi` in `api.js` — `getList`, `getDetails`, `save`, `delete`
+5. ✅ `ManagePhase.jsx` — table list, Add/Edit modal, Delete confirm, Toast
+6. ✅ `/admin/phases` route in `App.jsx`
+7. ⚠️ Remove hardcoded `'2025-26'` AcademicYear — deferred to Sprint 6 (Project Config)
 
-### Sprint 5 — User Management
-1. Backend: `/api/admin/users` CRUD + activate/deactivate + send SMS
-2. Frontend: ManageUsers + AddEditUsers pages
-3. Bulk college password generation
+### 🔴 Sprint 5 — User Management — NEXT
+1. Backend: `PhaseController.cs` — `/api/admin/phases` CRUD endpoints
+2. Backend: `PhaseService.cs` + `PhaseModels.cs`
+3. Frontend: `ManagePhase.jsx` — list phases, add/edit/delete
+4. `AcademicYear` from DB config (remove hardcoded `'2025-26'` in letter pages)
+5. Add `/admin/phases` route to `App.jsx`
 
-### Sprint 6 — Project Config + Reports Builder
-1. Backend: `/api/admin/config` + `/api/admin/reports`
-2. Frontend: ManageProjectConfiguration + ManageReports pages
-3. SQL keyword blocking on backend
+### ✅ Sprint 5 — User Management — COMPLETE
+1. ✅ `UserModels.cs` — all request/response models
+2. ✅ `UserManagementService.cs` — GetUserTypes, GetUserList, GetUserDetails, SaveUser (add/edit), ToggleActive, SendSms
+3. ✅ `UserManagementController.cs` — 7 endpoints at `/api/admin/users/*`
+4. ✅ `userMgmtApi` in `api.js`
+5. ✅ `ManageUsers.jsx` — user type dropdown, grid with all actions, Add/Edit modal, Export to Excel, Toast
+6. ✅ `/admin/users` route in `App.jsx` + URL mapped in `menuUrlMap.js`
+
+### ✅ Sprint 6 — Project Config + Reports Builder — COMPLETE
+1. ✅ `ProjectConfigModels.cs` + `ProjectConfigService.cs` + `ProjectConfigController.cs`
+2. ✅ `ManageProjectConfig.jsx` — grid + inline edit (TextBox/Dropdown per config type)
+3. ✅ `ReportBuilderService.cs` + `ReportBuilderController.cs` — full CRUD + execute + keyword blocking
+4. ✅ `ManageReports.jsx` — report form, column browser, execute result grid, Excel export
+5. ✅ `configApi` + `reportBuilderApi` in `api.js`
+6. ✅ Routes `/admin/config` + `/admin/reports` + menuUrlMap entries
+
+### ✅ Sprint 7 — Candidate Utilities — COMPLETE
+1. ✅ `CandidateUtilsModels.cs` — all models
+2. ✅ `CandidateUtilsService.cs` — Search, GetPasswordInfo, ResetPassword, GetDocVerificationStatus
+3. ✅ `CandidateUtilsController.cs` — 4 endpoints at `/api/admin/candidates/*`
+4. ✅ `candidateUtilsApi` in `api.js`
+5. ✅ `SearchCandidate.jsx` — 4 search types, read-only grid
+6. ✅ `ResetCandidatePassword.jsx` — search + show current password + reset form
+7. ✅ `CheckDocVerificationStatus.jsx` — search + document grid + inline PDF preview
+8. ✅ Routes + menuUrlMap for all 3 pages
+
+### ⏳ Backlog (remaining)
 
 ### Sprint 7 — Candidate Utilities + EVC
 1. Search Candidate admin page
@@ -453,3 +493,82 @@ POST /api/admin/reports/execute
 | 6.4 | EVC management needed in this project? | Not in new project | Confirm with stakeholder |
 | 6.5 | Custom SQL report builder — expose to admin 12 or only admin 11? | Old: both 11 and 12 | Confirm |
 | 6.6 | Check App Settings page — should masked connection strings be shown? | Old: shows everything | Recommend: show only non-sensitive keys |
+
+
+---
+
+## 7. TASK TRACKER
+
+> Last updated: September 2026
+
+### ✅ COMPLETED
+
+| # | Task | Sprint | Notes |
+|---|------|--------|-------|
+| 1 | `MenuController.cs` + `MenuService.cs` — `GET /api/menu` | 1 | DB-driven nav from `Menu_GetMenu` SP |
+| 2 | `CollegeLayout.jsx` — DB-driven navbar | 1 | Replaced hardcoded menus |
+| 3 | `ManageMenus.jsx`, `ManageGroups.jsx`, `ManageLinks.jsx` | 1 | Admin menu CRUD |
+| 4 | `AddEditMenu.jsx`, `AddEditLink.jsx`, `MenuHome.jsx` | 1 | Admin menu add/edit forms |
+| 5 | `NotificationController.cs` + `NotificationService.cs` | 2 | Full CRUD + Azure Blob upload |
+| 6 | `ManageNotifications.jsx` + `AddEditNotification.jsx` | 2 | Admin notification management |
+| 7 | `ActivityStatusController.cs` + `ActivityStatusService.cs` | 3 | 6 endpoints for activity + admission |
+| 8 | `ActivityStatusModels.cs` | 3 | All request/response models |
+| 9 | `ManageActivityStatus.jsx` | 3 | Modal popup, OPEN/CLOSED toggle, toast |
+| 10 | `ManageAdmissionSchedule.jsx` | 3 | Per-phase admission date windows |
+| 11 | `FileProxyController.cs` | — | PDF inline preview (no download) |
+| 12 | `CollegeDashboardService.cs` — CollegeName on dashboard | — | College name shown in hero banner |
+| 13 | `AuthService.cs` — LastLoginDateTime captured at login | — | Previous login time stored in JWT |
+| 14 | `PublicLayout.jsx` — hide New Registration when closed | — | Reads `registrationApi.checkStatus()` |
+| 15 | `AdmissionSummary.jsx` — document preview with proxy | — | PDF shown inline in modal |
+| 16 | `ManageActivityStatus.jsx` — toast notifications | — | Fixed top-right toast, auto-dismiss |
+| 17 | Routes in `App.jsx` — all admin routes registered | 1–3 | `/admin/activity-status`, `/admin/admission-schedule`, `/admin/menu/*`, `/admin/notifications/*` |
+| 18 | `PhaseModels.cs` | 4 | `PhaseItem`, `SavePhaseRequest`, `SavePhaseResponse`, `DeletePhaseResponse` |
+| 19 | `PhaseService.cs` | 4 | `GetList`, `GetDetails`, `Save`, `Delete` — SPs: `Administration_GetPhaseList/Details/SavePhase/DeletePhase` |
+| 20 | `PhaseController.cs` | 4 | 4 endpoints at `GET/POST/DELETE /api/admin/phases` |
+| 21 | `phaseApi` in `api.js` | 4 | `getList`, `getDetails`, `save`, `delete` |
+| 22 | `ManagePhase.jsx` | 4 | Table list, Add/Edit modal, Delete confirm, Toast |
+| 23 | `/admin/phases` route in `App.jsx` | 4 | Protected [11,12] |
+| 24 | `UserModels.cs` | 5 | `UserItem`, `UserListResponse`, `SaveUserRequest`, all response models |
+| 25 | `UserManagementService.cs` | 5 | GetUserTypes, GetUserList, GetUserDetails, SaveUser, ToggleActive, SendSms |
+| 26 | `UserManagementController.cs` | 5 | 7 endpoints at `/api/admin/users/*` |
+| 27 | `userMgmtApi` in `api.js` | 5 | getTypes, getList, getDetails, add, edit, toggle, sendSms |
+| 28 | `ManageUsers.jsx` | 5 | User type dropdown, grid, Add/Edit modal, Export Excel, Toast |
+| 29 | `/admin/users` route + menuUrlMap | 5 | App.jsx + menuUrlMap.js |
+| 30 | `ProjectConfigModels.cs` | 6 | `ConfigItem`, `SaveConfigRequest`, `SaveConfigResponse`, all report models |
+| 31 | `ProjectConfigService.cs` + `ProjectConfigController.cs` | 6 | GET/POST `/api/admin/config` |
+| 32 | `ReportBuilderService.cs` + `ReportBuilderController.cs` | 6 | CRUD + execute + keyword blocking |
+| 33 | `ManageProjectConfig.jsx` | 6 | Grid + inline edit (TextBox/Dropdown) |
+| 34 | `ManageReports.jsx` | 6 | Form + column browser + execute grid + Excel export |
+| 35 | `configApi` + `reportBuilderApi` in `api.js` | 6 | All methods |
+| 36 | Routes `/admin/config` + `/admin/reports` | 6 | App.jsx + menuUrlMap.js |
+
+---
+
+### 🔴 IN PROGRESS / NEXT
+
+| # | Task | Sprint | Details |
+|---|------|--------|---------|
+| 41 | `CandidateUtilsModels.cs` | 7 | Search result, reset password, doc verification models |
+| 42 | `CandidateUtilsService.cs` | 7 | SearchCandidate, ResetCandidatePassword, GetDocVerificationStatus |
+| 43 | `CandidateUtilsController.cs` | 7 | `GET /api/admin/candidates/search`, `POST /api/admin/candidates/{id}/reset-password`, `GET /api/admin/candidates/{id}/doc-status` |
+| 44 | `candidateUtilsApi` in `api.js` | 7 | `search`, `resetPassword`, `getDocStatus` |
+| 45 | `SearchCandidate.jsx` | 7 | Search by AppID/Name/Mobile/Email → read-only grid |
+| 46 | `ResetCandidatePassword.jsx` | 7 | AppID lookup → show current password → new/confirm → save |
+| 47 | `CheckDocVerificationStatus.jsx` | 7 | AppID lookup → document grid (read-only) with View |
+| 48 | Routes + menuUrlMap for all 3 pages | 7 | `/admin/candidates/*` |
+
+---
+
+### ⏳ UPCOMING
+
+| Sprint | Tasks |
+|--------|-------|
+| Sprint 5 | `ManageUsers.jsx` — list, add, edit, activate/deactivate, send SMS. Backend: `UserController.cs` |
+| Sprint 5 | Bulk college password generation page |
+| Sprint 6 | `ManageProjectConfiguration.jsx` — key-value config editor |
+| Sprint 6 | `ManageReports.jsx` — custom SQL report builder with Excel export |
+| Sprint 7 | Search Candidate, Reset Candidate Password, Check Document Verification Status admin pages |
+| Sprint 7 | EVC + SubEVC management (confirm with stakeholder first — see Open Decision 6.4) |
+| Backlog | `CandidateNavbar.jsx` — DB-driven (low priority, menus are stable) |
+| Backlog | Activity window enforcement on candidate backend (SP `fnCheckApplicationFormFillingEligiblity`) |
+| Backlog | Admin Dashboard — full CRM stats (Registered/Locked/Verified counts per course) |

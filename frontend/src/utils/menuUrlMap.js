@@ -53,18 +53,51 @@ const URL_MAP = [
   { old: 'college/collegelist.aspx',                        to: '/admin/college/list'                   },
   { old: 'college/getcollegepassword.aspx',                 to: '/admin/college/passwords'              },
   { old: 'college/resetcollegepassword.aspx',               to: '/admin/college/reset-password'         },
-  { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidate/search'               },
-  { old: 'flag=resetcandidatepassword',                     to: '/admin/candidate/reset-password'       },
+  { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidates/search'              },
+  { old: 'flag=resetcandidatepassword',                     to: '/admin/candidates/reset-password'      },
   { old: 'flag=checkpaymenthistory',                        to: '/admin/candidate/payment-history'      },
-  { old: 'flag=printapplicationform',                       to: '/admin/candidate/print-application'    },
+  { old: 'flag=printapplicationform',                       to: '/candidate/application-form/print'     },
   { old: 'administration/managenotifications.aspx',         to: '/admin/notifications'              },
   { old: 'administration/manageactivitystatus.aspx',        to: '/admin/activity-status'                },
   { old: 'administration/manageadmissionschedule.aspx',     to: '/admin/admission-schedule'             },
+  { old: 'administration/manageusers.aspx',                 to: '/admin/users'                          },
   { old: 'administration/manageprojectconfiguration.aspx',  to: '/admin/config'                         },
   { old: 'administration/managereports.aspx',               to: '/admin/reports'                        },
-  { old: 'administration/manageusers.aspx',                 to: '/admin/users'                          },
-  { old: 'menu/menuhome.aspx',                              to: '/admin/menu'                           },  { old: 'administration/resetapplicationvariables.aspx',   to: '/admin/reset-variables'                },
   { old: 'administration/manageevc.aspx',                   to: '/admin/evc'                            },
+  { old: 'administration/managesubevc.aspx',                to: '/admin/sub-evc'                        },
+
+  // ── EVerification ──────────────────────────────────────────────────────────
+  { old: 'everification/candidatelistforeverification.aspx', to: '/everification/candidates'              },
+  { old: 'everification/checkapplicationid.aspx',            to: '/everification/check'                   },
+  { old: 'everification/everifydocuments.aspx',              to: '/everification/verify'                  },
+  { old: 'dashboard/dashboardeverification.aspx',            to: '/everification/dashboard'               },
+
+  // ── EVC Application Form menu (via Admin/CheckApplicationID.aspx flags) ───
+  { old: 'flag=everification',                               to: '/everification/check'                   },
+  { old: 'flag=changemobilemail',                            to: '/everification/candidate-action/change-mobile' },
+  { old: 'flag=changesecurityquestion',                      to: '/everification/candidate-action/change-security' },
+  { old: 'flag=checkdocumentverificationstatus',             to: '/everification/candidate-action/doc-status'     },
+  { old: 'admin/checkapplicationid.aspx',                    to: '/everification/candidate-action'        },
+
+  // ── EVC Reports ────────────────────────────────────────────────────────────
+  { old: 'reports/candidateseligibleforeverification.aspx',  to: '/everification/reports/eligible'        },
+  { old: 'reports/evcwisereport.aspx',                       to: '/everification/reports/evc-wise'        },
+  { old: 'reports/evcwisecandidatelist.aspx',                to: '/everification/reports/evc-candidates'  },
+
+  // ── EVC Miscellaneous ──────────────────────────────────────────────────────
+  { old: 'administration/editprofile.aspx',                  to: '/college/misc/update-profile'           },
+  // Note: candidate/changepassword → /candidate/change-password (already mapped above)
+  // EVC reuses the same routes — allowed via role [41,42] on those routes
+
+  // ── EVC Administration (UserTypeID 41 only) ────────────────────────────────
+  { old: 'administration/managesubevc.aspx',                 to: '/everification/manage-sub-evc'          },
+  { old: 'administration/subEVCdetails.aspx',                to: '/everification/manage-sub-evc'          },
+  { old: 'menu/menuhome.aspx',                              to: '/admin/menu'                           },
+  { old: 'administration/resetapplicationvariables.aspx',   to: '/admin/reset-variables'                },
+  { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidates/search'              },
+  { old: 'admin/resetcandidatepassword.aspx',               to: '/admin/candidates/reset-password'      },
+  { old: 'admin/checkdocumentverificationstatus.aspx',      to: '/admin/candidates/doc-status'          },
+  { old: 'admin/checkapplicationid.aspx',                   to: '/admin/candidates/search'              },
   { old: 'college/editcollegedetails.aspx',                 to: '/admin/college/add'                    },
 
   // ── Admin Admission (same as college but from admin role) ─────────────────
@@ -101,4 +134,64 @@ export function mapUrl(oldUrl) {
  */
 export function isGroupItem(linkUrl) {
   return !linkUrl || linkUrl === '#'
+}
+
+/**
+ * EVC-specific URL map — overrides for EVC users (UserTypeID 41/42).
+ * These URLs appear in the EVC navbar but must route to EVC-scoped pages
+ * instead of candidate/admin pages.
+ * Used only by EVerificationLayout.
+ */
+const EVC_URL_MAP = [
+  // EVerification core pages
+  { old: 'everification/candidatelistforeverification.aspx', to: '/everification/candidates'              },
+  { old: 'everification/checkapplicationid.aspx',            to: '/everification/check'                   },
+  { old: 'everification/everifydocuments.aspx',              to: '/everification/verify'                  },
+  { old: 'dashboard/dashboardeverification.aspx',            to: '/everification/dashboard'               },
+  { old: 'flag=everification',                               to: '/everification/check'                   },
+
+  // Application Form menu flags → EVC candidate-action pages
+  { old: 'flag=printapplicationform',                        to: '/everification/candidate-action'        },
+  { old: 'flag=changemobilemail',                            to: '/everification/candidate-action'        },
+  { old: 'flag=changesecurityquestion',                      to: '/everification/candidate-action'        },
+  { old: 'flag=resetcandidatepassword',                      to: '/everification/candidate-action'        },
+  { old: 'flag=checkdocumentverificationstatus',             to: '/everification/candidate-action/doc-status' },
+  { old: 'admin/checkapplicationid.aspx',                    to: '/everification/candidate-action'        },
+  { old: 'admin/searchcandidate.aspx',                       to: '/everification/candidate-action'        },
+
+  // Reports
+  { old: 'reports/candidateseligibleforeverification.aspx',  to: '/everification/reports/eligible'        },
+  { old: 'reports/evcwisereport.aspx',                       to: '/everification/reports/evc-wise'        },
+  { old: 'reports/evcwisecandidatelist.aspx',                to: '/everification/reports/evc-candidates'  },
+
+  // Miscellaneous — EVC-scoped routes with EVerificationLayout
+  { old: 'candidate/changepassword.aspx',                    to: '/everification/misc/change-password'    },
+  { old: 'candidate/changesecurityquestion.aspx',            to: '/everification/misc/change-security-question' },
+  { old: 'administration/editprofile.aspx',                  to: '/everification/misc/update-profile'     },
+  { old: 'administration/editUserprofile.aspx',              to: '/everification/misc/update-profile'     },
+
+  // Administration (UserTypeID 41 only)
+  { old: 'administration/managesubevc.aspx',                 to: '/everification/manage-sub-evc'          },
+  { old: 'administration/subEVCdetails.aspx',                to: '/everification/manage-sub-evc'          },
+]
+
+/**
+ * EVC-specific URL mapper — use this in EVerificationLayout instead of mapUrl().
+ * Checks EVC_URL_MAP first, then falls back to the general URL_MAP.
+ */
+export function mapUrlForEVC(oldUrl) {
+  if (!oldUrl || oldUrl === '#') return '#'
+  if (oldUrl.startsWith('http://') || oldUrl.startsWith('https://')) return oldUrl
+
+  const lower = oldUrl.toLowerCase()
+
+  // Check EVC-specific map first
+  const evcMatch = EVC_URL_MAP.find(entry => lower.includes(entry.old.toLowerCase()))
+  if (evcMatch) return evcMatch.to
+
+  // Fall back to general map
+  const match = URL_MAP.find(entry => lower.includes(entry.old.toLowerCase()))
+  if (match) return match.to
+
+  return '#'
 }

@@ -2,16 +2,20 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SiteHeader from './SiteHeader'
 import SiteFooter from './SiteFooter'
+import { registrationApi } from '../services/api'
 
 /**
  * PublicLayout — used by all pre-login pages (Home, Register, Login, etc.)
  * Uses shared SiteHeader (right side = portal badge) and SiteFooter.
  * Has its own public navbar: Home | Search College | EN मराठी | New Registration | Log In
+ * New Registration button is hidden when registration is closed
+ * (mirrors old project: btnNewRegistration.Visible = IsRegistrationOpen)
  */
 export default function PublicLayout({ children }) {
   const [langActive, setLangActive] = useState(() => {
     try { return localStorage.getItem('mpkv_lang') || 'en' } catch { return 'en' }
   })
+  const [isRegistrationOpen, setIsRegistrationOpen] = useState(true) // default true until API responds
 
   // Restore saved language on mount — same as index.html DOMContentLoaded handler
   useEffect(() => {
@@ -21,6 +25,13 @@ export default function PublicLayout({ children }) {
         if (s) { s.value = 'mr'; s.dispatchEvent(new Event('change')) }
       }, 800)
     }
+  }, [])
+
+  // Check if registration is open — mirrors Base_IsNewCandidateRegistrationStarted SP
+  useEffect(() => {
+    registrationApi.checkStatus()
+      .then(res => setIsRegistrationOpen(res.data?.isOpen ?? true))
+      .catch(() => setIsRegistrationOpen(true)) // default to visible on error
   }, [])
 
   const navLinks = [
@@ -58,13 +69,15 @@ export default function PublicLayout({ children }) {
               style={{ background: langActive==='mr'?'#059669':'transparent', border:'none', color: langActive==='mr'?'#fff':'rgba(255,255,255,0.75)', fontSize:13, fontWeight:600, padding:'5px 11px', borderRadius:4, cursor:'pointer', fontFamily:'inherit' }}>मराठी</button>
           </div>
 
-          {/* New Registration */}
-          <Link to="/register"
-            style={{ display:'flex', alignItems:'center', gap:8, backgroundColor:'#1fa876', color:'#ffffff', border:'none', padding:'10px 18px', borderRadius:6, fontSize:14, fontWeight:600, textDecoration:'none', whiteSpace:'nowrap', cursor:'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor='#178a5f'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor='#1fa876'}>
-            + New Registration
-          </Link>
+          {/* New Registration — hidden when registration is closed */}
+          {isRegistrationOpen && (
+            <Link to="/register"
+              style={{ display:'flex', alignItems:'center', gap:8, backgroundColor:'#1fa876', color:'#ffffff', border:'none', padding:'10px 18px', borderRadius:6, fontSize:14, fontWeight:600, textDecoration:'none', whiteSpace:'nowrap', cursor:'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor='#178a5f'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor='#1fa876'}>
+              + New Registration
+            </Link>
+          )}
 
           {/* Log In */}
           <Link to="/login"

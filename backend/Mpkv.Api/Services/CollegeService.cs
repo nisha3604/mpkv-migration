@@ -23,6 +23,8 @@ namespace Mpkv.Api.Services
         CurrentPasswordResponse GetCurrentPassword(string collegeCode);
         // Admin: reset password
         ResetCollegePasswordResponse ResetPassword(ResetCollegePasswordRequest request, string loggedInUserLoginId, string ipAddress);
+        // Admin: send login ID + password to college via SMS (mirrors GetCollegePassword.aspx Send SMS button)
+        SendCollegeSmsResponse SendPasswordSms(string collegeCode);
     }
 
     /// <summary>
@@ -31,9 +33,14 @@ namespace Mpkv.Api.Services
     /// </summary>
     public class CollegeService : ICollegeService
     {
-        private readonly DbAccess _db;
+        private readonly DbAccess          _db;
+        private readonly IMessagingService _msg;
 
-        public CollegeService(DbAccess db) => _db = db;
+        public CollegeService(DbAccess db, IMessagingService msg)
+        {
+            _db  = db;
+            _msg = msg;
+        }
 
         // ══════════════════════════════════════════════════════════════════════
         // GetSummary — CollegeSummary.aspx Page_Load
@@ -307,6 +314,67 @@ namespace Mpkv.Api.Services
                 };
             }
             catch (Exception ex) { return new ResetCollegePasswordResponse { Success = false, Message = ex.Message }; }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // SendPasswordSms — GetCollegePassword.aspx gvCollegeList_SelectedIndexChanging
+        // Mirrors exactly: BaseWorker.GetEMailSMS("SendLoginIDPassword","S",CollegeCode)
+        //   → sends CollegeCode (VAR1 / Login ID) + plaintext password (VAR2) to mobile
+        // SP: Base_GetEMailSMS(@Purpose, @MessageType, @Param1=CollegeCode)
+        // ══════════════════════════════════════════════════════════════════════
+        public SendCollegeSmsResponse SendPasswordSms(string collegeCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(collegeCode))
+                    return new SendCollegeSmsResponse { Success = false, Message = "College code is required." };
+
+                // Step 1 — get SMS template + mobile number (same SP as old project)
+                var p = new DynamicParameters();
+                p.Add("@Purpose",     "SendLoginIDPassword");
+                p.Add("@MessageType", "S");
+                p.Add("@Param1",      collegeCode);   // Param1 = CollegeCode = Login ID (mirrors old code)
+                p.Add("@Param2",      "");
+                p.Add("@Param3",      "");
+                p.Add("@Param4",      "");
+                p.Add("@Param5",      "");
+                var smsDt = _db.GetDataTable("Base_GetEMailSMS", p);
+
+                if (smsDt == null || smsDt.Rows.Count == 0)
+                    return new SendCollegeSmsResponse { Success = false, Message = "Could not retrieve SMS template for this college." };
+
+                var smsRow = smsDt.Rows[0];
+                bool HS(string n) => smsDt.Columns.Contains(n) && smsRow[n] != DBNull.Value;
+
+                var mobileNo   = HS("MobileNo")   ? smsRow["MobileNo"]?.ToString()   ?? "" : "";
+                var templateId = HS("TemplateID") ? smsRow["TemplateID"]?.ToString() ?? "" : "";
+                var message    = HS("Message")    ? smsRow["Message"]?.ToString()    ?? "" : "";
+
+                if (string.IsNullOrWhiteSpace(mobileNo))
+                    return new SendCollegeSmsResponse { Success = false, Message = "No mobile number found for this college." };
+
+                // Step 2 — get the decoded plaintext password for this college
+                // (mirrors gvCollegeList.Rows[i].Cells[5] after Base64Decrypt)
+                var pwdResult = GetCurrentPassword(collegeCode);
+                var password  = pwdResult.Success ? pwdResult.CurrentPassword : "";
+
+                // Step 3 — substitute ##Password## placeholder (same as UserManagementService.SendSms)
+                if (!string.IsNullOrEmpty(password))
+                    message = message.Replace("##Password##", password);
+
+                // Step 4 — fire and forget (mirrors MessagingHelperMsg91.SendSMS fire-and-forget)
+                _ = _msg.SendSmsAsync(mobileNo, message, templateId);
+
+                return new SendCollegeSmsResponse
+                {
+                    Success = true,
+                    Message = "College Login ID and Password has been sent to Admission Incharge's Mobile No."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new SendCollegeSmsResponse { Success = false, Message = ex.Message };
+            }
         }
 
         // ── Private helpers ───────────────────────────────────────────────────

@@ -53,4 +53,15 @@ namespace Mpkv.Api.Models.College
         public string Message          { get; set; } = string.Empty;
         public string UpdatedPassword  { get; set; } = string.Empty;
     }
+
+    public class SendCollegeSmsResponse
+    {
+        public bool   Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class SendCollegeSmsRequest
+    {
+        public string CollegeCode { get; set; } = string.Empty;
+    }
 }

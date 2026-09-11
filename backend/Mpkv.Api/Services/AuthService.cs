@@ -51,7 +51,15 @@ namespace Mpkv.Api.Services
                 param.Add("@BrowserVersion", "1.0");
                 param.Add("@IPAddress",      ipAddress);
 
-                var dt = _db.GetDataTable("Account_CheckUserExists", param);
+                // Use GetDataSet to handle multiple result sets from Account_CheckUserExists
+                // The SP does INSERT + UPDATE before the final SELECT, so we need the last non-empty table
+                var ds = _db.GetDataSet("Account_CheckUserExists", param);
+
+                // Find the last non-empty result set — that's the user data SELECT
+                System.Data.DataTable? dt = null;
+                if (ds != null)
+                    for (int ti = ds.Tables.Count - 1; ti >= 0; ti--)
+                        if (ds.Tables[ti].Rows.Count > 0) { dt = ds.Tables[ti]; break; }
 
                 if (dt == null || dt.Rows.Count == 0)
                     return new LoginResponse { Success = false, Message = "Invalid Login ID or Password." };

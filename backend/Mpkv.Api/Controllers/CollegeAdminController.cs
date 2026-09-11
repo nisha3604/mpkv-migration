@@ -63,5 +63,17 @@ namespace Mpkv.Api.Controllers
             var result = _collegeService.ResetPassword(request, GetLoginId(), GetIp());
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
+        // POST /api/admin/college/send-password-sms
+        // Mirrors GetCollegePassword.aspx gvCollegeList_SelectedIndexChanging — sends Login ID + Password via SMS
+        [HttpPost("send-password-sms")]
+        public IActionResult SendPasswordSms([FromBody] SendCollegeSmsRequest request)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (request == null || string.IsNullOrWhiteSpace(request.CollegeCode))
+                return BadRequest(new { success = false, message = "College code is required." });
+            var result = _collegeService.SendPasswordSms(request.CollegeCode);
+            return Ok(result);
+        }
     }
 }
