@@ -25,7 +25,7 @@ namespace Mpkv.Api.Data
         {
             using var conn = CreateConnection();
             conn.Open();
-            using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure, CommandTimeout = 120 };
             if (param != null)
                 foreach (var name in param.ParameterNames)
                     cmd.Parameters.AddWithValue(name, param.Get<object>(name) ?? DBNull.Value);
@@ -40,7 +40,7 @@ namespace Mpkv.Api.Data
         {
             using var conn = CreateConnection();
             conn.Open();
-            using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure, CommandTimeout = 120 };
 
             if (param != null)
                 foreach (var name in param.ParameterNames)

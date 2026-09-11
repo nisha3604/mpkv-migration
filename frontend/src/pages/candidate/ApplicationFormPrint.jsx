@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { applicationFormApi } from '../../services/api'
+import { useSearchParams } from 'react-router-dom'
+import { applicationFormApi, candidateUtilsApi } from '../../services/api'
 
 /**
  * ApplicationFormPrint — mirrors ApplicationFormPrint.aspx exactly.
@@ -27,15 +28,26 @@ function resolveUrl(url) {
 
 export default function ApplicationFormPrint() {
   const { user } = useAuth()
+  const [searchParams]        = useSearchParams()
+  const appIdParam            = searchParams.get('appId')  // set by admin/EVC
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    applicationFormApi.getSummary()
-      .then(res => setData(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    if (appIdParam) {
+      // Admin / EVC — fetch by Application ID via admin API
+      candidateUtilsApi.getApplication(appIdParam)
+        .then(res => { if (res.data?.success) setData(res.data.data) })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      // Candidate — fetch own form
+      applicationFormApi.getSummary()
+        .then(res => setData(res.data))
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }
+  }, [appIdParam])
 
   // Auto-print once data loaded — mirrors body onload="PrintWindow()"
   useEffect(() => {

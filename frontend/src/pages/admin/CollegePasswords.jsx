@@ -69,7 +69,7 @@ export default function CollegePasswords() {
     setSmsStatus(p => ({ ...p, [collegeCode]: 'sending' }))
     try {
       // POST to backend which calls GetEMailSMS + MessagingHelperMsg91.SendSMS
-      await adminCollegeApi.sendSms({ collegeCode })
+      await adminCollegeApi.sendPasswordSms(collegeCode)
       setSmsStatus(p => ({ ...p, [collegeCode]: 'success' }))
       setTimeout(() => setSmsStatus(p => ({ ...p, [collegeCode]: null })), 3000)
     } catch {

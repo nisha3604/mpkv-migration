@@ -4,7 +4,6 @@ import ProtectedRoute    from './components/ProtectedRoute'
 import PublicLayout      from './components/PublicLayout'
 import CandidateLayout   from './components/CandidateLayout'
 import CollegeLayout     from './components/CollegeLayout'
-
 // ── Common pages ──────────────────────────────────────────────────────────────
 import Home             from './pages/common/Home'
 import SearchCollege      from './pages/common/SearchCollege'
@@ -22,7 +21,6 @@ import TermsAndConditions from './pages/common/TermsAndCondition'
 import RefundAndCancellationPolicy from './pages/common/RefundAndCancellation'
 import Disclaimer from './pages/common/Disclaimer'
 import AboutUs from './pages/common/AboutUs'
-
 // ── Candidate pages (UserTypeID = 91) ─────────────────────────────────────────
 import CandidateDashboard  from './pages/candidate/Dashboard'
 import Personal            from './pages/candidate/Personal'
@@ -66,7 +64,6 @@ import AllotmentDetail               from './pages/college/AllotmentDetail'
 import CompositeDetail               from './pages/college/CompositeDetail'
 import CandidatesEligibleForCounselling from './pages/college/CandidatesEligibleForCounselling'
 import UpdateProfile                    from './pages/college/UpdateProfile'
-
 // ── Admin pages (UserTypeID = 11 / 12) ────────────────────────────────────────
 import AdminDashboard        from './pages/admin/Dashboard'
 import AdminCollegeList      from './pages/admin/CollegeList'
@@ -83,11 +80,26 @@ import ManageNotifications   from './pages/admin/ManageNotifications'
 import AddEditNotification   from './pages/admin/AddEditNotification'
 import ManageActivityStatus  from './pages/admin/ManageActivityStatus'
 import ManageAdmissionSchedule from './pages/admin/ManageAdmissionSchedule'
-
-
-
-
-
+import ManageUsers             from './pages/admin/ManageUsers'
+import ManageProjectConfig     from './pages/admin/ManageProjectConfig'
+import ManageReports           from './pages/admin/ManageReports'
+import SearchCandidate         from './pages/admin/SearchCandidate'
+import ResetCandidatePassword  from './pages/admin/ResetCandidatePassword'
+import CheckDocVerificationStatus from './pages/admin/CheckDocVerificationStatus'
+import AppSettings             from './pages/admin/AppSettings'
+import CandidateApplicationView from './pages/admin/CandidateApplicationView'
+import ManageEvc               from './pages/admin/ManageEvc'
+import ManageSubEvc            from './pages/admin/ManageSubEvc'
+// ── EVerification pages (UserTypeID = 41/42) ──────────────────────────────────
+import EVerificationLayout     from './components/EVerificationLayout'
+import EVDashboard             from './pages/everification/Dashboard'
+import EVCandidateList         from './pages/everification/CandidateList'
+import EVCheckApplicationID    from './pages/everification/CheckApplicationID'
+import EVerifyDocuments        from './pages/everification/EVerifyDocuments'
+import EVCWiseReport           from './pages/everification/EVCWiseReport'
+import EVCWiseCandidateList    from './pages/everification/EVCWiseCandidateList'
+import CandidatesEligibleForEVerification from './pages/everification/CandidatesEligibleForEVerification'
+import EVCCandidateAction      from './pages/everification/CandidateAction'
 // ── ComingSoon placeholder ─────────────────────────────────────────────────────
 function ComingSoon({ title }) {
   return (
@@ -102,7 +114,6 @@ function ComingSoon({ title }) {
     </div>
   )
 }
-
 // ── Shorthand wrappers ─────────────────────────────────────────────────────────
 const C  = (roles, Layout, Page) => (
   <ProtectedRoute allowedRoles={roles}>
@@ -114,12 +125,10 @@ const CC = (roles, Layout, title) => (
     <Layout><ComingSoon title={title} /></Layout>
   </ProtectedRoute>
 )
-
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
-
         {/* ── Public ───────────────────────────────────────────────────── */}
         <Route path="/"                element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/login"           element={<Login />} />
@@ -129,7 +138,6 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password"  element={<ResetPassword />} />
         <Route path="/unauthorized"    element={<Unauthorized />} />
-
         <Route path="/search-college" element={<PublicLayout><SearchCollege /></PublicLayout>} />
         <Route path="/allotment"      element={<PublicLayout><AllotmentList/></PublicLayout>} />
         <Route path="/about"          element={<PublicLayout><AboutUs/></PublicLayout>} />
@@ -137,11 +145,9 @@ export default function App() {
         <Route path="/privacy"        element={<PublicLayout><PrivacyPolicy/></PublicLayout>} />
         <Route path="/refund"         element={<PublicLayout><RefundAndCancellationPolicy/></PublicLayout>} />
         <Route path="/disclaimer"     element={<PublicLayout><Disclaimer/></PublicLayout>} />
-
         {/* Payment gateway callbacks — no auth, no layout */}
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failed"  element={<PaymentFailed />} />
-
         {/* ── Candidate routes (UserTypeID = 91) ────────────────────────── */}
         <Route path="/candidate/dashboard"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><CandidateDashboard /></CandidateLayout></ProtectedRoute>} />
@@ -167,12 +173,11 @@ export default function App() {
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Fee /></CandidateLayout></ProtectedRoute>} />
         <Route path="/candidate/summary"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><Summary/></CandidateLayout></ProtectedRoute>} />
-        
         <Route path="/candidate/application-form"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><ApplicationForm /></CandidateLayout></ProtectedRoute>} />
         {/* Print page — no layout, auto-prints, opens in new window like old ApplicationFormPrint.aspx */}
         <Route path="/candidate/application-form/print"
-          element={<ProtectedRoute allowedRoles={[91]}><ApplicationFormPrint /></ProtectedRoute>} />
+          element={<ProtectedRoute allowedRoles={[91,11,12,41,42]}><ApplicationFormPrint /></ProtectedRoute>} />
         <Route path="/candidate/unlock-form"
           element={<ProtectedRoute allowedRoles={[91]}><CandidateLayout><UnlockForm /></CandidateLayout></ProtectedRoute>} />
         <Route path="/candidate/change-password"
@@ -197,7 +202,6 @@ export default function App() {
         <Route path="/college/dashboard" element={C([61], CollegeLayout, CollegeDashboard)} />
         <Route path="/college/summary"   element={C([61], CollegeLayout, CollegeSummary)} />
         <Route path="/college/edit"      element={C([61], CollegeLayout, CollegeEdit)} />
-
         {/* Admission Menu */}
         <Route path="/college/admission/allotment-status"
           element={C([61,11,12], CollegeLayout, CheckAllotmentStatus)} />
@@ -223,11 +227,9 @@ export default function App() {
         {/* Print Rejection Letter — mirrors AdmissionRejectionLetter.aspx */}
         <Route path="/college/admission/rejection-letter-print"
           element={C([61,11,12], CollegeLayout, AdmissionRejectionLetter)} />
-
         {/* Spot Round Menu */}
         <Route path="/college/spot-round/offer-seat"
           element={C([61,31,11,12], CollegeLayout, CounsellingCheckApplicationID)} />
-
         {/* Reports Menu */}
         <Route path="/college/reports/allotment"
           element={C([61,11,12], CollegeLayout, AllotmentReportByCourse)} />
@@ -239,16 +241,13 @@ export default function App() {
           element={C([61,11,12], CollegeLayout, CompositeDetail)} />
         <Route path="/college/reports/eligible"
           element={C([61,11,12], CollegeLayout, CandidatesEligibleForCounselling)} />
-
         {/* Miscellaneous */}
         <Route path="/college/misc/update-profile"
-          element={C([61,11,12], CollegeLayout, UpdateProfile)} />
-        {/* Change Security Question and Change Password — reuse candidate page components */}
+          element={C([61,41,42,11,12], CollegeLayout, UpdateProfile)} />
         <Route path="/college/misc/security-question"
-          element={C([61,11,12], CollegeLayout, ChangeSecurityQuestion)} />
+          element={C([61,41,42,11,12], CollegeLayout, ChangeSecurityQuestion)} />
         <Route path="/college/misc/change-password"
-          element={C([61,11,12], CollegeLayout, ChangePassword)} />
-
+          element={C([61,41,42,11,12], CollegeLayout, ChangePassword)} />
         {/* ── Admin (11, 12) ────────────────────────────────────────────── */}
         <Route path="/admin/dashboard"              element={C([11,12], CollegeLayout, AdminDashboard)} />
         <Route path="/admin/college/list"           element={C([11,12], CollegeLayout, AdminCollegeList)} />
@@ -269,10 +268,62 @@ export default function App() {
         <Route path="/admin/menu/links"                 element={C([11,12], CollegeLayout, ManageLinks)} />
         <Route path="/admin/menu/add-edit"              element={C([11,12], CollegeLayout, AddEditMenu)} />
         <Route path="/admin/menu/add-edit-link"         element={C([11,12], CollegeLayout, AddEditLink)} />
+        {/* Users, Config, Reports */}
+        <Route path="/admin/users"                      element={C([11,12], CollegeLayout, ManageUsers)}        />
+        <Route path="/admin/config"                     element={C([11,12], CollegeLayout, ManageProjectConfig)} />
+        <Route path="/admin/app-settings"           element={C([11],    CollegeLayout, AppSettings)}         />
+        <Route path="/admin/reports"                    element={C([11,12], CollegeLayout, ManageReports)}       />
 
+        {/* EVC Management */}
+        <Route path="/admin/evc"     element={C([11,12], CollegeLayout, ManageEvc)}    />
+        <Route path="/admin/sub-evc" element={C([11,12], CollegeLayout, ManageSubEvc)} />
+
+        {/* ── EVerification (UserTypeID = 41/42) ────────────────────────── */}
+        <Route path="/everification/dashboard"
+          element={C([41,42], EVerificationLayout, EVDashboard)} />
+        <Route path="/everification/candidates"
+          element={C([41,42], EVerificationLayout, EVCandidateList)} />
+        <Route path="/everification/check"
+          element={C([41,42], EVerificationLayout, EVCheckApplicationID)} />
+        <Route path="/everification/verify/:candidateId"
+          element={C([41,42], EVerificationLayout, EVerifyDocuments)} />
+
+        {/* EVC Miscellaneous — reuse existing candidate/college pages */}
+        <Route path="/everification/misc/change-password"
+          element={C([41,42], EVerificationLayout, ChangePassword)} />
+        <Route path="/everification/misc/change-security-question"
+          element={C([41,42], EVerificationLayout, ChangeSecurityQuestion)} />
+        <Route path="/everification/misc/update-profile"
+          element={C([41,42], EVerificationLayout, UpdateProfile)} />
+        <Route path="/everification/candidate-action"
+          element={C([41,42], EVerificationLayout, EVCCandidateAction)} />
+        <Route path="/everification/candidate-action/doc-status"
+          element={C([41,42], EVerificationLayout, CheckDocVerificationStatus)} />
+        <Route path="/everification/candidate-action/change-mobile"
+          element={C([41,42], EVerificationLayout, SearchCandidate)} />
+        <Route path="/everification/candidate-action/change-security"
+          element={C([41,42], EVerificationLayout, SearchCandidate)} />
+        <Route path="/everification/candidate-action/view/:applicationId"
+          element={C([41,42], EVerificationLayout, CandidateApplicationView)} />
+
+        {/* EVC Reports */}
+        <Route path="/everification/reports/eligible"
+          element={C([41,42], EVerificationLayout, CandidatesEligibleForEVerification)} />
+        <Route path="/everification/reports/evc-wise"
+          element={C([41,42], EVerificationLayout, EVCWiseReport)} />
+        <Route path="/everification/reports/evc-candidates"
+          element={C([41,42], EVerificationLayout, EVCWiseCandidateList)} />
+
+        {/* EVC Administration — Manage Sub-EVC (UserTypeID 41 only) */}
+        <Route path="/everification/manage-sub-evc"
+          element={C([41], EVerificationLayout, ManageSubEvc)} />
+        {/* Candidate utilities */}
+        <Route path="/admin/candidates/search"          element={C([11,12], CollegeLayout, SearchCandidate)}            />
+        <Route path="/admin/candidates/reset-password"  element={C([11,12], CollegeLayout, ResetCandidatePassword)}     />
+        <Route path="/admin/candidates/doc-status"      element={C([11,12], CollegeLayout, CheckDocVerificationStatus)} />
+        <Route path="/admin/candidates/view/:applicationId" element={C([11,12], CollegeLayout, CandidateApplicationView)} />
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
-
       </Routes>
     </AuthProvider>
   )

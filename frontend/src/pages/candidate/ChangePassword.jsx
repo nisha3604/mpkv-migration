@@ -56,6 +56,7 @@ export default function ChangePassword() {
       if (res.data.success) {
         setSuccess(res.data.message)
         setForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
+        setTimeout(() => navigate(-1), 1500)
       } else {
         setError(res.data.message)
       }

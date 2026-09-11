@@ -170,6 +170,9 @@ export const adminCollegeApi = {
   getPasswords      : (params)       => api.get('/admin/college/passwords', { params }),
   getCurrentPassword: (collegeCode)  => api.get(`/admin/college/current-password/${collegeCode}`),
   resetPassword     : (data)         => api.post('/admin/college/reset-password', data),
+  // Mirrors GetCollegePassword.aspx gvCollegeList_SelectedIndexChanging
+  // Sends Login ID + Password to Admission Incharge's mobile via MSG91
+  sendPasswordSms   : (collegeCode)  => api.post('/admin/college/send-password-sms', { collegeCode }),
 }
 
 // ── Admission / Allotment ─────────────────────────────────────────────────────
@@ -249,6 +252,88 @@ export const activityApi = {
   getAdmissionList   : ()       => api.get('/admin/activity-status/admission/list'),
   getAdmissionDetails: (phaseId)=> api.get(`/admin/activity-status/admission/${phaseId}`),
   saveAdmission      : (data)   => api.post('/admin/activity-status/admission', data),
+}
+
+// ── User Management (Admin) ───────────────────────────────────────────────────
+export const userMgmtApi = {
+  getTypes  : ()           => api.get('/admin/users/types'),
+  getList   : (userTypeId) => api.get(`/admin/users?userTypeId=${userTypeId}`),
+  getDetails: (id)         => api.get(`/admin/users/${id}`),
+  add       : (data)       => api.post('/admin/users', data),
+  edit      : (id, data)   => api.put(`/admin/users/${id}`, data),
+  toggle    : (id)         => api.post(`/admin/users/${id}/toggle`),
+  sendSms   : (id, userLoginId) => api.post(`/admin/users/${id}/send-sms`, { userLoginId }),
+}
+
+// ── Project Configuration (Admin) ─────────────────────────────────────────────
+export const configApi = {
+  getList   : ()       => api.get('/admin/config'),
+  getDetails: (key)    => api.get(`/admin/config/${encodeURIComponent(key)}`),
+  save      : (data)   => api.post('/admin/config', data),
+}
+
+// ── Report Builder (Admin) ────────────────────────────────────────────────────
+export const reportBuilderApi = {
+  getList       : ()           => api.get('/admin/reports'),
+  getReport     : (id)         => api.get(`/admin/reports/${id}`),
+  save          : (data)       => api.post('/admin/reports', data),
+  delete        : (id)         => api.delete(`/admin/reports/${id}`),
+  execute       : (id)         => api.post(`/admin/reports/${id}/execute`),
+  getTableViews : ()           => api.get('/admin/reports/table-views'),
+  getColumns    : (tableView)  => api.get(`/admin/reports/columns?tableView=${encodeURIComponent(tableView)}`),
+}
+
+// ── Admin Dashboard (CRM Stats) ───────────────────────────────────────────────
+export const adminDashboardApi = {
+  getDashboard : () => api.get('/admin/dashboard'),
+}
+
+// ── App Settings (Admin — UserTypeID 11 only) ─────────────────────────────────
+export const appSettingsApi = {
+  getList : () => api.get('/admin/app-settings'),
+}
+
+// ── Candidate Utilities (Admin) ───────────────────────────────────────────────
+export const candidateUtilsApi = {
+  search          : (data)   => api.post('/admin/candidates/search', data),
+  getPasswordInfo : (appId)  => api.get(`/admin/candidates/${encodeURIComponent(appId)}/password-info`),
+  resetPassword   : (data)   => api.post('/admin/candidates/reset-password', data),
+  getDocStatus    : (id)     => api.get(`/admin/candidates/${id}/doc-status`),
+  getApplication  : (id)     => api.get(`/admin/candidates/${id}/application`),
+  // Admin override — unlock a locked candidate form without fee
+  // Mirrors ApplicationFormUnlock.aspx.cs CloseConfirmBoxYes (admin branch)
+  unlockForm      : (appId)  => api.post(`/admin/candidates/${encodeURIComponent(appId)}/unlock`),
+}
+
+// ── EVerification (UserTypeID 41/42) ──────────────────────────────────────────
+export const eVerificationApi = {
+  getDashboard    : ()                    => api.get('/everification/dashboard'),
+  getCandidates   : (status)              => api.get(`/everification/candidates?status=${encodeURIComponent(status)}`),
+  checkApplication: (appId)              => api.get(`/everification/check-application?appId=${encodeURIComponent(appId)}`),
+  allot           : (candidateId)        => api.post('/everification/allot', { candidateID: candidateId }),
+  getDocuments    : (candidateId)        => api.get(`/everification/documents/${candidateId}`),
+  saveVerification: (data)               => api.post('/everification/verify', data),
+  // Reports
+  getEVCWiseReport          : ()                      => api.get('/everification/reports/evc-wise'),
+  getEVCWiseCandidateList   : (evcId, flag)           => api.get(`/everification/reports/evc-candidates?evcId=${evcId}&flag=${flag}`),
+  getEligibleCandidates     : (courseId = 0)          => api.get(`/everification/reports/eligible?courseId=${courseId}`),
+}
+
+// ── EVC Management (Admin) ────────────────────────────────────────────────────
+export const evcApi = {
+  // EVC (top-level)
+  getList       : ()           => api.get('/admin/evc'),
+  getDetails    : (id)         => api.get(`/admin/evc/${id}`),
+  save          : (data)       => api.post('/admin/evc', data),
+  activate      : (id)         => api.post(`/admin/evc/${id}/activate`),
+  deactivate    : (id)         => api.post(`/admin/evc/${id}/deactivate`),
+  // Sub-EVC (child)
+  getSubList    : (parentId)   => api.get(`/admin/evc/${parentId}/sub-evc`),
+  getMySubList  : ()           => api.get('/admin/evc/my-sub-evc'),
+  getSubDetails : (id)         => api.get(`/admin/sub-evc/${id}`),
+  saveSub       : (data)       => api.post('/admin/sub-evc', data),
+  activateSub   : (id)         => api.post(`/admin/sub-evc/${id}/activate`),
+  deactivateSub : (id)         => api.post(`/admin/sub-evc/${id}/deactivate`),
 }
 
 export default api
