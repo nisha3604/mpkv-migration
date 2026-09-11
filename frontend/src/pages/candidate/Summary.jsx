@@ -27,6 +27,7 @@ export default function Summary() {
   const [confirmed,  setConfirmed]  = useState(false)   // declaration checkbox
   const [locking,    setLocking]    = useState(false)
   const [showConfirm,setShowConfirm]= useState(false)   // confirm modal
+  const [viewDoc,    setViewDoc]    = useState(null)    // { name, url } — inline document viewer
 
   useEffect(() => {
     applicationFormApi.getSummary()
@@ -503,11 +504,12 @@ export default function Summary() {
                         <td style={{ padding:'10px 14px', fontSize:13 }}><Badge val={doc.isDocumentUploaded?.toUpperCase() === 'YES' || doc.documentUploadedURL?.length > 0 ? 'YES' : 'NO'}/></td>
                         <td style={{ padding:'10px 14px', textAlign:'center' }}>
                           {doc.documentUploadedURL?.length > 0 && (
-                            <a href={resolveUrl(doc.documentUploadedURL)} target="_blank" rel="noopener noreferrer"
-                              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, border:`1.5px solid ${V.border}`, borderRadius:6, background:'#f8fafc', color:V.teal, fontSize:12, textDecoration:'none' }}
-                              title="View Document">
+                            <button
+                              title="View Document"
+                              onClick={() => setViewDoc({ name: doc.documentName, url: `/api/file/preview?url=${encodeURIComponent(resolveUrl(doc.documentUploadedURL))}` })}
+                              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, border:`1.5px solid ${V.border}`, borderRadius:6, background:'#f8fafc', color:V.teal, fontSize:12, cursor:'pointer' }}>
                               <i className="fas fa-search"/>
-                            </a>
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -627,6 +629,21 @@ export default function Summary() {
       )}
 
       <style>{`@media(max-width:768px){.sum-grid{grid-template-columns:1fr!important;}}`}</style>
+
+      {/* ══ DOCUMENT VIEW MODAL ══════════════════════════════════════════════ */}
+      {viewDoc && (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:8 }}>
+          <div style={{ background:'#fff', borderRadius:10, boxShadow:'0 20px 60px rgba(0,0,0,0.3)', width:'98%', height:'94vh', overflow:'hidden', display:'flex', flexDirection:'column' }}>
+            <div style={{ background:V.navy, padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+              <span style={{ color:'#fff', fontWeight:700, fontSize:14 }}>{viewDoc.name}</span>
+              <button onClick={() => setViewDoc(null)} style={{ background:'#dc3545', border:'none', color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontWeight:700, fontSize:13, fontFamily:'inherit' }}>✕ Close</button>
+            </div>
+            <div style={{ flex:1, overflow:'auto' }}>
+              <iframe src={viewDoc.url} title="Document" style={{ width:'100%', height:'100%', border:'none' }}/>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
