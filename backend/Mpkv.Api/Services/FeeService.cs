@@ -14,6 +14,8 @@ namespace Mpkv.Api.Services
         FeeTransactionEntity? GetTransactionDetails(long transactionId);
         FeeProceedResponse SaveApplicationFeeDetails(long candidateId, string userLoginId, string ipAddress);
         PaymentHistoryResponse GetTransactionHistory(long candidateId);
+        List<DropdownItem> GetFailedTransactionsDateList();
+        Task<int> CheckFailedTransactionsByDate(string transactionDate);
     }
 
     public class FeeService : IFeeService
@@ -119,6 +121,65 @@ namespace Mpkv.Api.Services
             }
             catch (Exception ex) { Console.WriteLine($"[GetTransactionHistory] Error: {ex.Message}"); }
             return r;
+        }
+
+        // ── GetFailedTransactionsDateList ──────────────────────────────────
+        // Mirrors: FeeWorker.GetFailedTransactionsDateList()
+        // SP: Fee_GetFailedTransactionsDateList
+        public List<DropdownItem> GetFailedTransactionsDateList()
+        {
+            var list = new List<DropdownItem>();
+            try
+            {
+                var dt = _db.GetDataTable("Fee_GetFailedTransactionsDateList");
+                if (dt == null) return list;
+                foreach (System.Data.DataRow row in dt.Rows)
+                    list.Add(new DropdownItem
+                    {
+                        Value = row[0]?.ToString() ?? "",
+                        Text  = row[1]?.ToString() ?? ""
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine($"[GetFailedTransactionsDateList] Error: {ex.Message}"); }
+            return list;
+        }
+
+        // ── CheckFailedTransactionsByDate ─────────────────────────────────
+        // Mirrors: ddlTransactionDate_SelectedIndexChanged
+        // SP: Fee_GetFailedTransactions(@TransactionDate)
+        // Returns count of transactions checked
+        public async Task<int> CheckFailedTransactionsByDate(string transactionDate)
+        {
+            int count = 0;
+            try
+            {
+                if (!DateTime.TryParse(transactionDate, out var dt)) return 0;
+                var p = new DynamicParameters();
+                p.Add("@TransactionDate", dt);
+                var dataTable = _db.GetDataTable("Fee_GetFailedTransactions", p);
+                if (dataTable == null || dataTable.Rows.Count == 0) return 0;
+
+                var merchantId = _config["NSDL:MerchantID"] ?? "";
+                var secretKey  = _config["NSDL:SecretKey"]  ?? "";
+                var apiUrl     = _config["NSDL:PaidCheckAPIURL"] ?? "";
+                var userName   = _config["NSDL:UserName"]   ?? "";
+                var password   = _config["NSDL:Password"]   ?? "";
+
+                foreach (System.Data.DataRow row in dataTable.Rows)
+                {
+                    if (row["TransactionID"] == DBNull.Value) continue;
+                    var txId = Convert.ToInt64(row["TransactionID"]);
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(merchantId) && !string.IsNullOrEmpty(apiUrl))
+                            await CheckSingleNsdlTransaction(txId, merchantId, secretKey, apiUrl, userName, password);
+                        count++;
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"[CheckFailedTransactionsByDate] Error: {ex.Message}"); }
+            return count;
         }
     }
 }

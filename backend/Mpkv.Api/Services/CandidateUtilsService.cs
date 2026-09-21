@@ -11,9 +11,10 @@ namespace Mpkv.Api.Services
         CandidatePasswordInfoResponse  GetPasswordInfo(string applicationId);
         ResetCandidatePasswordResponse ResetPassword(ResetCandidatePasswordRequest req, string modifiedBy, string ipAddress);
         DocVerificationStatusResponse  GetDocVerificationStatus(long candidateId, string userLoginId);
-        // Admin override — unlocks a candidate's locked form without fee
-        // Mirrors ApplicationFormUnlock.aspx.cs CloseConfirmBoxYes (admin branch)
         UnlockCandidateFormResponse    UnlockCandidateForm(string applicationId, string adminLoginId, string ipAddress);
+        ChangeMobileEmailResponse      ChangeMobileEmail(string applicationId, string? newMobile, string? newEmail, string adminLoginId, string ipAddress);
+        AdminSecurityQuestionResponse  GetSecurityQuestionDetails(string applicationId);
+        ChangeMobileEmailResponse      ChangeSecurityQuestion(string applicationId, int securityQuestionId, string answer, string adminLoginId, string ipAddress);
     }
 
     /// <summary>
@@ -208,6 +209,163 @@ namespace Mpkv.Api.Services
             {
                 return new UnlockCandidateFormResponse { Success = false, Message = ex.Message };
             }
+        }
+
+        // ── Change Mobile No. / E-Mail ID (Admin override) ───────────────────        // Mirrors Admin/CheckApplicationID.aspx?Flag=ChangeMobileEMail →
+        //         Candidate/ChangeMobileEMail.aspx
+        // SPs: Base_GetCandidateID, ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisMobileNo,
+        //      Account_ChangeCandidateMobileNo, ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisEMailID,
+        //      Account_ChangeCandidateEMailID
+        public ChangeMobileEmailResponse ChangeMobileEmail(
+            string applicationId, string? newMobile, string? newEmail,
+            string adminLoginId, string ipAddress)
+        {
+            try
+            {
+                // Resolve CandidateID
+                var idP = new DynamicParameters();
+                idP.Add("@ApplicationID", applicationId.Trim());
+                var candidateId = _db.ExecuteScalar("Base_GetCandidateID", idP);
+                if (candidateId == null || Convert.ToInt64(candidateId) == 0)
+                    return new ChangeMobileEmailResponse { Success = false, Message = "Invalid Application ID." };
+
+                long cid = Convert.ToInt64(candidateId);
+                var mobileMsg = "";
+                var emailMsg  = "";
+
+                // ── Change Mobile Number ──────────────────────────────────────
+                if (!string.IsNullOrWhiteSpace(newMobile))
+                {
+                    var dupP = new DynamicParameters();
+                    dupP.Add("@CandidateID", cid);
+                    dupP.Add("@MobileNo",    newMobile.Trim());
+                    var dup = _db.ExecuteScalar("ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisMobileNo", dupP);
+                    if (dup != null && Convert.ToBoolean(dup))
+                        return new ChangeMobileEmailResponse { Success = false, Message = $"Mobile Number {newMobile} is already registered. Please use a different mobile number." };
+
+                    var p = new DynamicParameters();
+                    p.Add("@CandidateID", cid);
+                    p.Add("@MobileNo",    newMobile.Trim());
+                    p.Add("@UserLoginID", adminLoginId);
+                    p.Add("@IPAddress",   ipAddress);
+                    var result = _db.ExecuteScalar("Account_ChangeCandidateMobileNo", p)?.ToString() ?? "";
+                    if (result.ToUpper() == "Y") mobileMsg = "Mobile Number Changed Successfully.";
+                    else return new ChangeMobileEmailResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change mobile number." };
+                }
+
+                // ── Change E-Mail ID ──────────────────────────────────────────
+                if (!string.IsNullOrWhiteSpace(newEmail))
+                {
+                    var dupP = new DynamicParameters();
+                    dupP.Add("@CandidateID", cid);
+                    dupP.Add("@EMailID",     newEmail.Trim().ToLower());
+                    var dup = _db.ExecuteScalar("ApplicationForm_IsApplicationFormAlreadyRegisteredUsingThisEMailID", dupP);
+                    if (dup != null && Convert.ToBoolean(dup))
+                        return new ChangeMobileEmailResponse { Success = false, Message = $"E-Mail ID {newEmail} is already registered. Please use a different e-mail address." };
+
+                    var p = new DynamicParameters();
+                    p.Add("@CandidateID", cid);
+                    p.Add("@EMailID",     newEmail.Trim().ToLower());
+                    p.Add("@UserLoginID", adminLoginId);
+                    p.Add("@IPAddress",   ipAddress);
+                    var result = _db.ExecuteScalar("Account_ChangeCandidateEMailID", p)?.ToString() ?? "";
+                    if (result.ToUpper() == "Y") emailMsg = "E-Mail ID Changed Successfully.";
+                    else return new ChangeMobileEmailResponse { Success = false, Message = result.Length > 0 ? result : "Failed to change E-Mail ID." };
+                }
+
+                var msg = string.Join(" ", new[] { mobileMsg, emailMsg }.Where(m => m.Length > 0));
+                return new ChangeMobileEmailResponse { Success = true, Message = msg.Length > 0 ? msg : "Changes saved successfully." };
+            }
+            catch (Exception ex)
+            {
+                return new ChangeMobileEmailResponse { Success = false, Message = ex.Message };
+            }
+        }
+
+        // ── Get Security Question Details (Admin) ─────────────────────────────
+        // Mirrors ChangeSecurityQuestion.aspx Page_Load → LoadMasters + GetSecurityQuestion
+        // Returns security question list + current selection for the candidate
+        public AdminSecurityQuestionResponse GetSecurityQuestionDetails(string applicationId)
+        {
+            var r = new AdminSecurityQuestionResponse();
+            try
+            {
+                // Resolve CandidateID (UserID) from ApplicationID
+                var idP = new DynamicParameters();
+                idP.Add("@ApplicationID", applicationId.Trim());
+                var candidateId = _db.ExecuteScalar("Base_GetCandidateID", idP);
+                if (candidateId == null || Convert.ToInt64(candidateId) == 0)
+                { r.Success = false; r.Message = "Invalid Application ID."; return r; }
+
+                long uid = Convert.ToInt64(candidateId);
+
+                // Load security question master list
+                var mp = new DynamicParameters();
+                mp.Add("@TableName",        "Master_SecurityQuestion");
+                mp.Add("@DataValueField",   "SecurityQuestionID");
+                mp.Add("@DataTextField",    "SecurityQuestion");
+                mp.Add("@ParentField",      "");
+                mp.Add("@ParentFieldValue", "");
+                mp.Add("@OrderByFields",    "SecurityQuestion");
+                var dt = _db.GetDataTable("Base_GetMasterTableList", mp);
+                if (dt != null)
+                    foreach (System.Data.DataRow row in dt.Rows)
+                        r.SecurityQuestions.Add(new SecurityQuestionItem
+                        {
+                            Value = row[0]?.ToString() ?? "",
+                            Text  = row[1]?.ToString() ?? ""
+                        });
+
+                // Get current security question for this candidate
+                var p = new DynamicParameters();
+                p.Add("@UserID", uid);
+                var dt2 = _db.GetDataTable("Account_GetSecurityQuestionDetails", p);
+                if (dt2 != null && dt2.Rows.Count > 0)
+                {
+                    r.CurrentSecurityQuestionID     = Convert.ToInt32(dt2.Rows[0]["SecurityQuestionID"]);
+                    r.CurrentSecurityQuestionAnswer = dt2.Rows[0]["SecurityQuestionAnswer"]?.ToString() ?? "";
+                }
+
+                r.CandidateId = uid;
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ── Change Security Question (Admin override) ─────────────────────────
+        // Mirrors ChangeSecurityQuestion.aspx btnChangeSecurityQuestion_Click
+        // SP: Account_ResetSecurityQuestion(@UserID, @SecurityQuestionID, @SecurityQuestionAnswer, @UserLoginID, @IPAddress)
+        public ChangeMobileEmailResponse ChangeSecurityQuestion(
+            string applicationId, int securityQuestionId, string answer,
+            string adminLoginId, string ipAddress)
+        {
+            try
+            {
+                // Resolve CandidateID
+                var idP = new DynamicParameters();
+                idP.Add("@ApplicationID", applicationId.Trim());
+                var candidateId = _db.ExecuteScalar("Base_GetCandidateID", idP);
+                if (candidateId == null || Convert.ToInt64(candidateId) == 0)
+                    return new ChangeMobileEmailResponse { Success = false, Message = "Invalid Application ID." };
+
+                long uid = Convert.ToInt64(candidateId);
+
+                var p = new DynamicParameters();
+                p.Add("@UserID",                 uid);
+                p.Add("@SecurityQuestionID",      securityQuestionId);
+                p.Add("@SecurityQuestionAnswer",  answer.Trim());
+                p.Add("@UserLoginID",             adminLoginId);
+                p.Add("@IPAddress",               ipAddress);
+                var result = _db.ExecuteScalar("Account_ResetSecurityQuestion", p)?.ToString() ?? "";
+                bool ok = result.ToUpper() == "Y";
+                return new ChangeMobileEmailResponse
+                {
+                    Success = ok,
+                    Message = ok ? "Security Question Changed Successfully." : (result.Length > 0 ? result : "Failed to change security question.")
+                };
+            }
+            catch (Exception ex) { return new ChangeMobileEmailResponse { Success = false, Message = ex.Message }; }
         }
     }
 }

@@ -150,7 +150,8 @@ export const feeApi = {
     api.get(`/fee/payment-success?txId=${txId}&refNo=${encodeURIComponent(refNo ?? '')}&amount=${amount ?? 0}`),
   getPaymentFailed  : (msg) =>
     api.get(`/fee/payment-failed?msg=${encodeURIComponent(msg ?? '')}`),
-  getTransactionHistory : () => api.get('/fee/transaction-history'),
+  getTransactionHistory      : ()       => api.get('/fee/transaction-history'),
+  getAdminTransactionHistory : (appId)  => api.get(`/fee/admin-transaction-history/${encodeURIComponent(appId)}`),
   getReceipt            : (txId) => api.get(`/fee/receipt/${txId}`),
 }
 
@@ -311,6 +312,9 @@ export const candidateUtilsApi = {
   // Admin override — unlock a locked candidate form without fee
   // Mirrors ApplicationFormUnlock.aspx.cs CloseConfirmBoxYes (admin branch)
   unlockForm      : (appId)  => api.post(`/admin/candidates/${encodeURIComponent(appId)}/unlock`),
+  changeMobileEmail: (data)  => api.post('/admin/candidates/change-mobile-email', data),
+  getSecurityQuestion:  (appId) => api.get(`/admin/candidates/${encodeURIComponent(appId)}/security-question`),
+  changeSecurityQuestion:(data) => api.post('/admin/candidates/change-security-question', data),
 }
 
 // ── EVerification (UserTypeID 41/42) ──────────────────────────────────────────

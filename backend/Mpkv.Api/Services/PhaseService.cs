@@ -130,28 +130,41 @@ namespace Mpkv.Api.Services
         }
 
         // ── Mapper ───────────────────────────────────────────────────────────
+        // NormDate: SP returns dates as dd/MM/yyyy HH:mm (CONVERT style 103 uses '/')
+        // Frontend validation expects dd-MM-yyyy HH:mm — replace '/' with '-'.
+        // Also handles fallback where raw DateTime is formatted directly.
+        private static string NormDate(string? raw, object? rawDt)
+        {
+            // If formatted column present, just fix separator
+            if (!string.IsNullOrWhiteSpace(raw))
+                return raw.Replace('/', '-');
+            // Fallback: raw datetime column
+            if (rawDt != null && rawDt != DBNull.Value)
+                return Convert.ToDateTime(rawDt).ToString("dd-MM-yyyy HH:mm");
+            return "";
+        }
+
         private static PhaseItem MapPhase(System.Data.DataRow row, Func<string, bool> HC) => new()
         {
             PhaseID = HC("PhaseID") && row["PhaseID"] != DBNull.Value
                 ? Convert.ToInt32(row["PhaseID"]) : 0,
             Phase = HC("Phase") ? row["Phase"]?.ToString() ?? "" : "",
 
-            // Use formatted string columns (AllotmentDisplayStartDateF etc.) from SP
-            AllotmentDisplayStartDate  = HC("AllotmentDisplayStartDateF")  ? row["AllotmentDisplayStartDateF"]?.ToString()  ?? ""
-                                       : HC("AllotmentDisplayStartDate")  && row["AllotmentDisplayStartDate"]  != DBNull.Value
-                                           ? Convert.ToDateTime(row["AllotmentDisplayStartDate"]).ToString("dd-MM-yyyy HH:mm") : "",
-            AdmissionStartDate         = HC("AdmissionStartDateF")         ? row["AdmissionStartDateF"]?.ToString()         ?? ""
-                                       : HC("AdmissionStartDate")         && row["AdmissionStartDate"]         != DBNull.Value
-                                           ? Convert.ToDateTime(row["AdmissionStartDate"]).ToString("dd-MM-yyyy HH:mm") : "",
-            CandidateAdmissionLastDate = HC("CandidateAdmissionLastDateF") ? row["CandidateAdmissionLastDateF"]?.ToString() ?? ""
-                                       : HC("CandidateAdmissionLastDate") && row["CandidateAdmissionLastDate"] != DBNull.Value
-                                           ? Convert.ToDateTime(row["CandidateAdmissionLastDate"]).ToString("dd-MM-yyyy HH:mm") : "",
-            CollegeAdmissionLastDate   = HC("CollegeAdmissionLastDateF")   ? row["CollegeAdmissionLastDateF"]?.ToString()   ?? ""
-                                       : HC("CollegeAdmissionLastDate")   && row["CollegeAdmissionLastDate"]   != DBNull.Value
-                                           ? Convert.ToDateTime(row["CollegeAdmissionLastDate"]).ToString("dd-MM-yyyy HH:mm") : "",
-            SystemAdmissionLastDate    = HC("SystemAdmissionLastDateF")    ? row["SystemAdmissionLastDateF"]?.ToString()    ?? ""
-                                       : HC("SystemAdmissionLastDate")    && row["SystemAdmissionLastDate"]    != DBNull.Value
-                                           ? Convert.ToDateTime(row["SystemAdmissionLastDate"]).ToString("dd-MM-yyyy HH:mm") : "",
+            AllotmentDisplayStartDate  = NormDate(
+                HC("AllotmentDisplayStartDateF")  ? row["AllotmentDisplayStartDateF"]?.ToString()  : null,
+                HC("AllotmentDisplayStartDate")   ? row["AllotmentDisplayStartDate"]               : null),
+            AdmissionStartDate         = NormDate(
+                HC("AdmissionStartDateF")         ? row["AdmissionStartDateF"]?.ToString()         : null,
+                HC("AdmissionStartDate")          ? row["AdmissionStartDate"]                      : null),
+            CandidateAdmissionLastDate = NormDate(
+                HC("CandidateAdmissionLastDateF") ? row["CandidateAdmissionLastDateF"]?.ToString() : null,
+                HC("CandidateAdmissionLastDate")  ? row["CandidateAdmissionLastDate"]              : null),
+            CollegeAdmissionLastDate   = NormDate(
+                HC("CollegeAdmissionLastDateF")   ? row["CollegeAdmissionLastDateF"]?.ToString()   : null,
+                HC("CollegeAdmissionLastDate")    ? row["CollegeAdmissionLastDate"]                : null),
+            SystemAdmissionLastDate    = NormDate(
+                HC("SystemAdmissionLastDateF")    ? row["SystemAdmissionLastDateF"]?.ToString()    : null,
+                HC("SystemAdmissionLastDate")     ? row["SystemAdmissionLastDate"]                 : null),
 
             IsCurrentPhase    = HC("IsCurrentPhase")    && row["IsCurrentPhase"]    != DBNull.Value && Convert.ToBoolean(row["IsCurrentPhase"]),
             IsCounsellingPhase= HC("IsCounsellingPhase")&& row["IsCounsellingPhase"] != DBNull.Value && Convert.ToBoolean(row["IsCounsellingPhase"]),

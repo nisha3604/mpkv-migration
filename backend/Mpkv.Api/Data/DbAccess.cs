@@ -20,15 +20,28 @@ namespace Mpkv.Api.Data
 
         private SqlConnection CreateConnection() => new SqlConnection(_connectionString);
 
+        /// <summary>
+        /// DynamicParameters.ParameterNames strips the '@' prefix when iterating.
+        /// SqlCommand.Parameters.AddWithValue requires it to match SP parameter names.
+        /// This helper ensures '@' is always present.
+        /// </summary>
+        private static void AddParams(SqlCommand cmd, DynamicParameters? param)
+        {
+            if (param == null) return;
+            foreach (var name in param.ParameterNames)
+            {
+                var sqlName = name.StartsWith("@") ? name : "@" + name;
+                cmd.Parameters.AddWithValue(sqlName, param.Get<object>(name) ?? DBNull.Value);
+            }
+        }
+
         // ── Returns all rows as a DataTable (first result set only) ─────────
         public DataTable GetDataTable(string spName, DynamicParameters? param = null)
         {
             using var conn = CreateConnection();
             conn.Open();
             using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure, CommandTimeout = 120 };
-            if (param != null)
-                foreach (var name in param.ParameterNames)
-                    cmd.Parameters.AddWithValue(name, param.Get<object>(name) ?? DBNull.Value);
+            AddParams(cmd, param);
             var dt = new DataTable();
             using var adapter = new SqlDataAdapter(cmd);
             adapter.Fill(dt);   // fills first result set only
@@ -41,11 +54,7 @@ namespace Mpkv.Api.Data
             using var conn = CreateConnection();
             conn.Open();
             using var cmd = new SqlCommand(spName, conn) { CommandType = CommandType.StoredProcedure, CommandTimeout = 120 };
-
-            if (param != null)
-                foreach (var name in param.ParameterNames)
-                    cmd.Parameters.AddWithValue(name, param.Get<object>(name) ?? DBNull.Value);
-
+            AddParams(cmd, param);
             var ds = new DataSet();
             using var adapter = new SqlDataAdapter(cmd);
             adapter.Fill(ds);

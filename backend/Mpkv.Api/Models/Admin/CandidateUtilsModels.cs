@@ -82,4 +82,44 @@ namespace Mpkv.Api.Models.Admin
         public bool   Success { get; set; }
         public string Message { get; set; } = "";
     }
+
+    // ── Change Mobile No. / E-Mail ID (Admin Override) ───────────────────────
+    // Mirrors Admin/CheckApplicationID.aspx?Flag=ChangeMobileEMail →
+    //         Candidate/ChangeMobileEMail.aspx
+    public class ChangeMobileEmailRequest
+    {
+        public string ApplicationId { get; set; } = "";
+        public string? NewMobile    { get; set; }
+        public string? NewEmail     { get; set; }
+    }
+
+    public class ChangeMobileEmailResponse
+    {
+        public bool   Success { get; set; }
+        public string Message { get; set; } = "";
+    }
+
+    // ── Admin Change Security Question ────────────────────────────────────────
+    public class SecurityQuestionItem
+    {
+        public string Value { get; set; } = "";
+        public string Text  { get; set; } = "";
+    }
+
+    public class AdminSecurityQuestionResponse
+    {
+        public bool   Success                      { get; set; }
+        public string Message                      { get; set; } = "";
+        public long   CandidateId                  { get; set; }
+        public int    CurrentSecurityQuestionID    { get; set; }
+        public string CurrentSecurityQuestionAnswer{ get; set; } = "";
+        public List<SecurityQuestionItem> SecurityQuestions { get; set; } = new();
+    }
+
+    public class AdminChangeSecurityQuestionRequest
+    {
+        public string ApplicationId        { get; set; } = "";
+        public int    SecurityQuestionId   { get; set; }
+        public string Answer               { get; set; } = "";
+    }
 }

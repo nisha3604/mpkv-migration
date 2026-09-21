@@ -18,7 +18,6 @@ const SEARCH_OPTIONS = [
 
 // Context hints shown at top depending on which menu item navigated here
 const ACTION_HINTS = {
-  '/admin/candidates/change-mobile':     { icon:'fa-mobile-alt',  color:'#0ea5e9', text:'Change Mobile No. / E-Mail ID — search for the candidate first, then use the action from their application view.' },
   '/admin/candidates/change-security':   { icon:'fa-key',         color:'#7c3aed', text:'Change Security Question — search for the candidate first, then use the action from their application view.' },
   '/admin/candidates/payment-history':   { icon:'fa-rupee-sign',  color:'#059669', text:'Check Payment History — search for the candidate first to view their payment records.' },
   '/admin/candidates/print-application': { icon:'fa-print',       color:'#2563eb', text:'Print Application Form — search for the candidate first, then print from their application view.' },

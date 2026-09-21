@@ -91,6 +91,11 @@ import CandidateApplicationView from './pages/admin/CandidateApplicationView'
 import ManageEvc               from './pages/admin/ManageEvc'
 import ManageSubEvc            from './pages/admin/ManageSubEvc'
 import ManagePhases            from './pages/admin/ManagePhases'
+import ResetApplicationVariables from './pages/admin/ResetApplicationVariables'
+import AdminChangeMobileEmail  from './pages/admin/AdminChangeMobileEmail'
+import AdminChangeSecurityQuestion from './pages/admin/AdminChangeSecurityQuestion'
+import AdminPaymentHistory        from './pages/admin/AdminPaymentHistory'
+import AdminPrintApplicationForm  from './pages/admin/AdminPrintApplicationForm'
 // ── EVerification pages (UserTypeID = 41/42) ──────────────────────────────────
 import EVerificationLayout     from './components/EVerificationLayout'
 import EVDashboard             from './pages/everification/Dashboard'
@@ -280,7 +285,9 @@ export default function App() {
         <Route path="/admin/sub-evc" element={C([11,12], CollegeLayout, ManageSubEvc)} />
 
         {/* Phase Management */}
-        <Route path="/admin/phases"  element={C([11,12], CollegeLayout, ManagePhases)} />
+        <Route path="/admin/phases"          element={C([11,12], CollegeLayout, ManagePhases)} />
+        {/* Reset Application Variables */}
+        <Route path="/admin/reset-variables" element={C([11,12], CollegeLayout, ResetApplicationVariables)} />
 
         {/* ── EVerification (UserTypeID = 41/42) ────────────────────────── */}
         <Route path="/everification/dashboard"
@@ -322,18 +329,19 @@ export default function App() {
         <Route path="/everification/manage-sub-evc"
           element={C([41], EVerificationLayout, ManageSubEvc)} />
         {/* Candidate utilities */}
-        <Route path="/admin/candidates/search"          element={C([11,12], CollegeLayout, SearchCandidate)}            />
-        <Route path="/admin/candidates/reset-password"  element={C([11,12], CollegeLayout, ResetCandidatePassword)}     />
-        <Route path="/admin/candidates/doc-status"      element={C([11,12], CollegeLayout, CheckDocVerificationStatus)} />
+        <Route path="/admin/candidates/search"            element={C([11,12], CollegeLayout, SearchCandidate)}            />
+        <Route path="/admin/candidates/reset-password"    element={C([11,12], CollegeLayout, ResetCandidatePassword)}     />
+        <Route path="/admin/candidates/doc-status"        element={C([11,12], CollegeLayout, CheckDocVerificationStatus)} />
+        <Route path="/admin/candidates/change-mobile"     element={C([11,12], CollegeLayout, AdminChangeMobileEmail)}         />
+        <Route path="/admin/candidates/change-security"   element={C([11,12], CollegeLayout, AdminChangeSecurityQuestion)} />
+        <Route path="/admin/candidates/payment-history"   element={C([11,12], CollegeLayout, AdminPaymentHistory)}            />
+        <Route path="/admin/candidates/print-application" element={C([11,12], CollegeLayout, AdminPrintApplicationForm)}        />
+        {/* Dynamic route LAST — must come after all specific /admin/candidates/* routes */}
         <Route path="/admin/candidates/view/:applicationId" element={C([11,12], CollegeLayout, CandidateApplicationView)} />
-        {/* Change Mobile/Email, Change Security, Payment History — all go to Search first */}
-        <Route path="/admin/candidates/change-mobile"     element={C([11,12], CollegeLayout, SearchCandidate)} />
-        <Route path="/admin/candidates/change-security"   element={C([11,12], CollegeLayout, SearchCandidate)} />
-        <Route path="/admin/candidates/payment-history"   element={C([11,12], CollegeLayout, SearchCandidate)} />
-        <Route path="/admin/candidates/print-application" element={C([11,12], CollegeLayout, SearchCandidate)} />
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
   )
 }
+

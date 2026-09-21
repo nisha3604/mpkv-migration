@@ -30,7 +30,8 @@ const URL_MAP = [
 
   // ── Application Form — lock flow ──────────────────────────────────────────
   { old: 'unlock',                                          to: '/candidate/unlock-form'        },
-  { old: 'applicationform.aspx',                            to: '/candidate/application-form'   },
+  { old: 'admin/printapplicationform.aspx',                 to: '/admin/candidates/print-application'   },
+  { old: 'candidate/applicationform.aspx',                  to: '/candidate/application-form'   },
 
   // ── College ───────────────────────────────────────────────────────────────
   { old: 'admission/checkallotmentstatus',                  to: '/college/admission/allotment-status'   },
@@ -54,11 +55,21 @@ const URL_MAP = [
   { old: 'college/getcollegepassword.aspx',                 to: '/admin/college/passwords'              },
   { old: 'college/resetcollegepassword.aspx',               to: '/admin/college/reset-password'         },
   { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidates/search'              },
+  { old: 'admin/changemobileemail.aspx',                    to: '/admin/candidates/change-mobile'       },
+  { old: 'admin/changesecurityquestion.aspx',               to: '/admin/candidates/change-security'     },
+  { old: 'admin/paymenthistory.aspx',                       to: '/admin/candidates/payment-history'     },
+  { old: 'admin/printapplicationform.aspx',                 to: '/admin/candidates/print-application'   },
   { old: 'flag=resetcandidatepassword',                     to: '/admin/candidates/reset-password'      },
   { old: 'flag=checkpaymenthistory',                        to: '/admin/candidates/payment-history'     },
   { old: 'flag=printapplicationform',                       to: '/admin/candidates/print-application'   },
   { old: 'flag=changemobilemail',                           to: '/admin/candidates/change-mobile'       },
   { old: 'flag=changesecurityquestion',                     to: '/admin/candidates/change-security'     },
+  // Direct CheckApplicationID.aspx flag mappings (more specific — must come before generic checkapplicationid)
+  { old: 'checkapplicationid.aspx?flag=changemobilemail',   to: '/admin/candidates/change-mobile'       },
+  { old: 'checkapplicationid.aspx?flag=changesecurityquestion', to: '/admin/candidates/change-security' },
+  { old: 'checkapplicationid.aspx?flag=checkpaymenthistory',    to: '/admin/candidates/payment-history' },
+  { old: 'checkapplicationid.aspx?flag=printapplicationform',   to: '/admin/candidates/print-application'},
+  { old: 'checkapplicationid.aspx?flag=resetcandidatepassword', to: '/admin/candidates/reset-password'  },
   { old: 'administration/managenotifications.aspx',         to: '/admin/notifications'              },
   { old: 'administration/manageactivitystatus.aspx',        to: '/admin/activity-status'                },
   { old: 'administration/manageadmissionschedule.aspx',     to: '/admin/admission-schedule'             },
@@ -78,7 +89,8 @@ const URL_MAP = [
   // ── EVC Application Form menu (via Admin/CheckApplicationID.aspx flags) ───
   { old: 'flag=everification',                               to: '/everification/check'                   },
   { old: 'flag=checkdocumentverificationstatus',             to: '/everification/candidate-action/doc-status'     },
-  { old: 'admin/checkapplicationid.aspx',                    to: '/everification/candidate-action'        },
+  // Note: admin/checkapplicationid.aspx is intentionally NOT mapped here
+  // because the Flag= parameter determines the actual destination (mapped above)
 
   // ── EVC Reports ────────────────────────────────────────────────────────────
   { old: 'reports/candidateseligibleforeverification.aspx',  to: '/everification/reports/eligible'        },
@@ -98,6 +110,8 @@ const URL_MAP = [
   { old: 'admin/searchcandidate.aspx',                      to: '/admin/candidates/search'              },
   { old: 'admin/resetcandidatepassword.aspx',               to: '/admin/candidates/reset-password'      },
   { old: 'admin/checkdocumentverificationstatus.aspx',      to: '/admin/candidates/doc-status'          },
+  // admin/checkapplicationid.aspx with no flag → search page (fallback only)
+  // Note: flag-specific entries above handle Flag=ChangeMobileEMail etc.
   { old: 'admin/checkapplicationid.aspx',                   to: '/admin/candidates/search'              },
   { old: 'college/editcollegedetails.aspx',                 to: '/admin/college/add'                    },
 
@@ -186,12 +200,14 @@ export function mapUrlForEVC(oldUrl) {
 
   const lower = oldUrl.toLowerCase()
 
-  // Check EVC-specific map first
-  const evcMatch = EVC_URL_MAP.find(entry => lower.includes(entry.old.toLowerCase()))
+  // Check EVC-specific map first (longest match wins)
+  const sortedEvc = [...EVC_URL_MAP].sort((a, b) => b.old.length - a.old.length)
+  const evcMatch = sortedEvc.find(entry => lower.includes(entry.old.toLowerCase()))
   if (evcMatch) return evcMatch.to
 
-  // Fall back to general map
-  const match = URL_MAP.find(entry => lower.includes(entry.old.toLowerCase()))
+  // Fall back to general map (longest match wins)
+  const sorted = [...URL_MAP].sort((a, b) => b.old.length - a.old.length)
+  const match = sorted.find(entry => lower.includes(entry.old.toLowerCase()))
   if (match) return match.to
 
   return '#'

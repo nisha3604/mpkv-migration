@@ -5,17 +5,16 @@ import { phaseApi } from '../../services/api'
  * ManagePhases — mirrors Administration/ManagePhase.aspx from old project.
  *
  * Features:
- *  - List all phases with IsCurrentPhase / IsCounsellingPhase / IsActive badges
- *  - Add New Phase → modal form
- *  - Edit Phase    → modal form pre-filled
- *  - Delete Phase  → confirm modal
+ *  - List all phases. The CURRENT phase is highlighted in green with a "CURRENT" badge.
+ *  - "Set as Current" button per row — only one phase can be current at a time.
+ *    The SP auto-clears IsCurrentPhase on all other rows when a new one is set.
+ *  - Add / Edit phase via modal (IsCurrentPhase removed from modal — use the row button)
+ *  - Delete phase via confirm modal
  *
  * SPs: Administration_GetPhaseList
  *      Administration_GetPhaseDetails
- *      Administration_SavePhase   (PhaseID=0 insert, >0 update)
+ *      Administration_SavePhase   (clears IsCurrentPhase on others when IsCurrentPhase=1)
  *      Administration_DeletePhase
- *
- * Date format: dd-MM-yyyy HH:mm  (same as old project)
  */
 
 const DATE_FIELDS = [
@@ -30,7 +29,7 @@ const EMPTY_FORM = {
   phaseID: 0, phase: '',
   allotmentDisplayStartDate: '', admissionStartDate: '',
   candidateAdmissionLastDate: '', collegeAdmissionLastDate: '', systemAdmissionLastDate: '',
-  isCurrentPhase: false, isCounsellingPhase: false, isActive: true,
+  isCounsellingPhase: false, isActive: true,
 }
 
 export default function ManagePhases() {
@@ -41,8 +40,10 @@ export default function ManagePhases() {
   const [saving,      setSaving]      = useState(false)
   const [form,        setForm]        = useState(EMPTY_FORM)
   const [formErr,     setFormErr]     = useState({})
-  const [deleteId,    setDeleteId]    = useState(null)   // phaseID pending delete
-  const [deleting,    setDeleting]    = useState(false)
+  const [deleteId,       setDeleteId]       = useState(null)
+  const [deleting,       setDeleting]       = useState(false)
+  const [settingCurrent, setSettingCurrent] = useState(null)  // phaseID being set as current
+  const [confirmCurrent, setConfirmCurrent] = useState(null)  // { phaseID, phase } — pending confirm
 
   const V = {
     navy: '#14212e', primary: '#059669', primaryDark: '#047857',
@@ -69,11 +70,54 @@ export default function ManagePhases() {
     setTimeout(() => setToast({ text: '', ok: true }), 3500)
   }
 
-  // ── Default date: now formatted ───────────────────────────────────────────
   const nowFormatted = () => {
     const d = new Date()
     const pad = n => String(n).padStart(2, '0')
     return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  // ── Set as Current Phase ──────────────────────────────────────────────────
+  // Step 1: show confirmation modal
+  const promptSetCurrent = (item) => {
+    if (item.isCurrentPhase) return
+    setConfirmCurrent({ phaseID: item.phaseID, phase: item.phase })
+  }
+
+  // Step 2: user confirmed — load full details and save with IsCurrentPhase=true
+  const handleSetCurrent = async () => {
+    if (!confirmCurrent) return
+    const { phaseID, phase } = confirmCurrent
+    setConfirmCurrent(null)
+    setSettingCurrent(phaseID)
+    try {
+      const r = await phaseApi.getDetails(phaseID)
+      if (!r.data.success || !r.data.item) {
+        showToast('Could not load phase details.', false); return
+      }
+      const d = r.data.item
+      const res = await phaseApi.save({
+        phaseID:                   d.phaseID,
+        phase:                     d.phase,
+        allotmentDisplayStartDate: d.allotmentDisplayStartDate,
+        admissionStartDate:        d.admissionStartDate,
+        candidateAdmissionLastDate:d.candidateAdmissionLastDate,
+        collegeAdmissionLastDate:  d.collegeAdmissionLastDate,
+        systemAdmissionLastDate:   d.systemAdmissionLastDate,
+        isCurrentPhase:            true,
+        isCounsellingPhase:        d.isCounsellingPhase,
+        isActive:                  d.isActive,
+      })
+      if (res.data.success) {
+        showToast(`"${phase}" is now the current phase.`)
+        load()
+      } else {
+        showToast(res.data.message || 'Failed to set current phase.', false)
+      }
+    } catch {
+      showToast('Server error.', false)
+    } finally {
+      setSettingCurrent(null)
+    }
   }
 
   // ── Open Add modal ────────────────────────────────────────────────────────
@@ -99,7 +143,6 @@ export default function ManagePhases() {
           candidateAdmissionLastDate:d.candidateAdmissionLastDate,
           collegeAdmissionLastDate:  d.collegeAdmissionLastDate,
           systemAdmissionLastDate:   d.systemAdmissionLastDate,
-          isCurrentPhase:            d.isCurrentPhase,
           isCounsellingPhase:        d.isCounsellingPhase,
           isActive:                  d.isActive,
         })
@@ -121,8 +164,6 @@ export default function ManagePhases() {
       if (!form[f.key] || !dtRe.test(form[f.key].trim()))
         e[f.key] = 'Enter date as dd-MM-yyyy HH:mm'
     })
-    if (form.isCurrentPhase === undefined || form.isCurrentPhase === null) e.isCurrentPhase = 'Required.'
-    if (form.isCounsellingPhase === undefined || form.isCounsellingPhase === null) e.isCounsellingPhase = 'Required.'
     setFormErr(e)
     return Object.keys(e).length === 0
   }
@@ -132,7 +173,13 @@ export default function ManagePhases() {
     if (!validate()) return
     setSaving(true)
     try {
-      const r = await phaseApi.save(form)
+      // Preserve existing isCurrentPhase when editing — don't change it from the edit modal
+      // isCurrentPhase is controlled exclusively via the "Set as Current" row button
+      const currentItem = items.find(i => i.phaseID === form.phaseID)
+      const r = await phaseApi.save({
+        ...form,
+        isCurrentPhase: form.phaseID === 0 ? false : (currentItem?.isCurrentPhase ?? false),
+      })
       if (r.data.success) {
         showToast(r.data.message || 'Saved successfully.')
         setShowModal(false)
@@ -175,7 +222,7 @@ export default function ManagePhases() {
     border: '1.5px solid #e2e8f0', borderRadius: 7,
     fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
   }
-  const errStyle  = { fontSize: 11, color: V.danger, marginTop: 3 }
+  const errStyle = { fontSize: 11, color: V.danger, marginTop: 3 }
   const thS = {
     padding: '10px 12px', color: '#fff', fontWeight: 700,
     fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em',
@@ -186,7 +233,7 @@ export default function ManagePhases() {
     borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle',
   }
 
-  const Badge = ({ val, yes, color }) => (
+  const Badge = ({ val, yes }) => (
     <span style={{
       display: 'inline-block', fontSize: 10, fontWeight: 700,
       padding: '2px 9px', borderRadius: 20,
@@ -196,15 +243,9 @@ export default function ManagePhases() {
     }}>{val}</span>
   )
 
-  const CurrentBadge = ({ val }) => val ? (
-    <span style={{ display:'inline-block', fontSize:10, fontWeight:700, padding:'2px 9px', borderRadius:20, background:'#059669', color:'#fff', border:'1px solid #047857' }}>
-      CURRENT
-    </span>
-  ) : <Badge val="No" yes={false}/>
-
   return (
     <div style={{ fontFamily: 'inherit', background: V.bg, minHeight: '100vh', padding: 24 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
 
         {/* ── Page header ─────────────────────────────────────────────────── */}
         <div style={{ background: V.navy, borderRadius: '12px 12px 0 0', padding: '14px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -215,7 +256,14 @@ export default function ManagePhases() {
             <p style={{ color: 'rgba(255,255,255,.6)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', margin: 0 }}>Administration</p>
             <h2 style={{ color: '#fff', fontWeight: 800, fontSize: 17, margin: 0 }}>Manage Admission Phases</h2>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Current phase indicator */}
+            {items.find(i => i.isCurrentPhase) && (
+              <span style={{ background: 'rgba(5,150,105,.25)', border: '1px solid rgba(5,150,105,.5)', color: '#6ee7b7', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 700 }}>
+                <i className="fas fa-circle" style={{ fontSize: 8, marginRight: 6, verticalAlign: 'middle' }}/>
+                Current: {items.find(i => i.isCurrentPhase)?.phase}
+              </span>
+            )}
             <button onClick={openAdd}
               style={{ background: V.primary, color: '#fff', border: 'none', padding: '9px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7, boxShadow: '0 3px 10px rgba(5,150,105,.35)' }}>
               <i className="fas fa-plus"/> Add New Phase
@@ -225,6 +273,12 @@ export default function ManagePhases() {
 
         {/* ── Card body ───────────────────────────────────────────────────── */}
         <div style={{ background: V.white, border: `1px solid ${V.border}`, borderTop: 'none', borderRadius: '0 0 12px 12px', padding: 24 }}>
+
+          {/* Info note */}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 7, padding: '9px 14px', marginBottom: 20, fontSize: 12, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fas fa-info-circle"/>
+            Only <strong>one phase</strong> can be current at a time. Click <strong>Set as Current</strong> on a row to make it the active phase for admissions. All other phases will be automatically deactivated as current.
+          </div>
 
           {/* Toast */}
           {toast.text && (
@@ -251,14 +305,14 @@ export default function ManagePhases() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: V.navy }}>
-                    <th style={{ ...thS, width: 80, textAlign: 'center' }}>Action</th>
+                    <th style={{ ...thS, textAlign: 'center' }}>Action</th>
                     <th style={thS}>Phase Name</th>
                     <th style={thS}>Allotment Start</th>
                     <th style={thS}>Admission Start</th>
                     <th style={thS}>Candidate Last</th>
                     <th style={thS}>College Last</th>
                     <th style={thS}>System Last</th>
-                    <th style={{ ...thS, textAlign: 'center' }}>Current?</th>
+                    <th style={{ ...thS, textAlign: 'center' }}>Current Phase</th>
                     <th style={{ ...thS, textAlign: 'center' }}>Counselling?</th>
                     <th style={{ ...thS, textAlign: 'center' }}>Active?</th>
                   </tr>
@@ -269,29 +323,60 @@ export default function ManagePhases() {
                       style={{ background: item.isCurrentPhase ? '#f0fdf4' : idx % 2 === 0 ? V.white : '#f9fafb', transition: 'background .15s' }}
                       onMouseEnter={e => { if (!item.isCurrentPhase) e.currentTarget.style.background = '#f0f9ff' }}
                       onMouseLeave={e => { e.currentTarget.style.background = item.isCurrentPhase ? '#f0fdf4' : idx % 2 === 0 ? V.white : '#f9fafb' }}>
+
                       {/* Actions */}
-                      <td style={{ ...tdS, textAlign: 'center' }}>
+                      <td style={{ ...tdS, textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button onClick={() => openEdit(item)} title="Edit"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0ea5e9', fontSize: 16, padding: '0 5px' }}>
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0ea5e9', fontSize: 15, padding: '0 4px' }}>
                           <i className="fas fa-edit"/>
                         </button>
                         <button onClick={() => setDeleteId(item.phaseID)} title="Delete"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: V.danger, fontSize: 16, padding: '0 5px' }}>
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: V.danger, fontSize: 15, padding: '0 4px' }}>
                           <i className="fas fa-trash"/>
                         </button>
                       </td>
+
+                      {/* Phase Name */}
                       <td style={{ ...tdS, fontWeight: 600, color: '#0f172a' }}>
                         {item.isCurrentPhase && (
                           <span style={{ marginRight: 6, background: '#059669', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 8, verticalAlign: 'middle' }}>●</span>
                         )}
                         {item.phase}
                       </td>
+
                       <td style={tdS}>{item.allotmentDisplayStartDate  || '—'}</td>
                       <td style={tdS}>{item.admissionStartDate         || '—'}</td>
                       <td style={tdS}>{item.candidateAdmissionLastDate || '—'}</td>
                       <td style={tdS}>{item.collegeAdmissionLastDate   || '—'}</td>
                       <td style={tdS}>{item.systemAdmissionLastDate    || '—'}</td>
-                      <td style={{ ...tdS, textAlign: 'center' }}><CurrentBadge val={item.isCurrentPhase}/></td>
+
+                      {/* Current Phase — badge + Set as Current button */}
+                      <td style={{ ...tdS, textAlign: 'center' }}>
+                        {item.isCurrentPhase ? (
+                          <span style={{ display:'inline-block', fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:20, background:'#059669', color:'#fff', border:'1px solid #047857' }}>
+                            ✓ CURRENT
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => promptSetCurrent(item)}
+                            disabled={settingCurrent === item.phaseID}
+                            title="Set this phase as the current active phase"
+                            style={{
+                              background: settingCurrent === item.phaseID ? '#f1f5f9' : '#fff',
+                              color: '#059669', border: '1.5px solid #059669',
+                              borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700,
+                              cursor: settingCurrent === item.phaseID ? 'not-allowed' : 'pointer',
+                              fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5,
+                            }}
+                            onMouseEnter={e => { if (settingCurrent !== item.phaseID) { e.currentTarget.style.background='#059669'; e.currentTarget.style.color='#fff' }}}
+                            onMouseLeave={e => { if (settingCurrent !== item.phaseID) { e.currentTarget.style.background='#fff'; e.currentTarget.style.color='#059669' }}}>
+                            {settingCurrent === item.phaseID
+                              ? <><span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin inline-block"/>Setting...</>
+                              : <><i className="fas fa-check-circle"/>Set as Current</>}
+                          </button>
+                        )}
+                      </td>
+
                       <td style={{ ...tdS, textAlign: 'center' }}><Badge val={item.isCounsellingPhase ? 'Yes' : 'No'} yes={item.isCounsellingPhase}/></td>
                       <td style={{ ...tdS, textAlign: 'center' }}><Badge val={item.isActive ? 'Yes' : 'No'} yes={item.isActive}/></td>
                     </tr>
@@ -362,12 +447,11 @@ export default function ManagePhases() {
                 ))}
               </div>
 
-              {/* Toggle flags — 3 in a row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+              {/* Is Counselling Phase + Is Active — 2 in a row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 {[
-                  { key: 'isCurrentPhase',    label: 'Is Current Phase',    color: '#059669' },
                   { key: 'isCounsellingPhase', label: 'Is Counselling Phase', color: '#7c3aed' },
-                  { key: 'isActive',           label: 'Is Active',           color: '#0ea5e9' },
+                  { key: 'isActive',           label: 'Is Active',            color: '#0ea5e9' },
                 ].map(f => (
                   <div key={f.key}>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 5 }}>
@@ -380,9 +464,14 @@ export default function ManagePhases() {
                       <option value="1">Yes</option>
                       <option value="0">No</option>
                     </select>
-                    {formErr[f.key] && <p style={errStyle}>{formErr[f.key]}</p>}
                   </div>
                 ))}
+              </div>
+
+              {/* Note about IsCurrentPhase */}
+              <div style={{ marginTop: 16, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 7, padding: '9px 14px', fontSize: 12, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="fas fa-info-circle"/>
+                To set this as the current phase, use the <strong>Set as Current</strong> button on the phases list.
               </div>
             </div>
 
@@ -441,6 +530,52 @@ export default function ManagePhases() {
                 {deleting
                   ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/>Deleting...</>
                   : <><i className="fas fa-trash" style={{ fontSize: 13 }}/>Yes, Delete</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ══ SET AS CURRENT CONFIRM MODAL ═══════════════════════════════ */}
+      {confirmCurrent && (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ background:V.white, borderRadius:14, boxShadow:'0 20px 60px rgba(0,0,0,0.25)', width:'100%', maxWidth:440, overflow:'hidden', fontFamily:'inherit' }}>
+            {/* Header */}
+            <div style={{ background:V.navy, padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ width:32, height:32, borderRadius:'50%', background:'rgba(5,150,105,.25)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <i className="fas fa-check-circle" style={{ color:'#6ee7b7', fontSize:15 }}/>
+                </div>
+                <span style={{ color:'#fff', fontWeight:700, fontSize:15 }}>Set as Current Phase</span>
+              </div>
+              <button onClick={() => setConfirmCurrent(null)}
+                style={{ background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)', color:'#fff', width:28, height:28, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'inherit' }}>✕</button>
+            </div>
+            {/* Body */}
+            <div style={{ padding:'24px 24px 8px', textAlign:'center' }}>
+              <div style={{ width:56, height:56, borderRadius:'50%', background:'#f0fdf4', margin:'0 auto 16px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <i className="fas fa-layer-group" style={{ color:V.primary, fontSize:22 }}/>
+              </div>
+              <p style={{ fontSize:15, fontWeight:700, color:'#0f172a', margin:'0 0 10px' }}>
+                Set <span style={{ color:V.primary }}>"{confirmCurrent.phase}"</span> as current?
+              </p>
+              <p style={{ fontSize:13, color:V.muted, margin:0, lineHeight:1.7 }}>
+                This will make <strong>{confirmCurrent.phase}</strong> the active phase for all admissions.<br/>
+                All other phases will be automatically deactivated as current.
+              </p>
+            </div>
+            {/* Footer */}
+            <div style={{ padding:'16px 24px 24px', display:'flex', gap:12 }}>
+              <button onClick={() => setConfirmCurrent(null)}
+                style={{ flex:1, padding:'10px 0', background:V.white, border:`1.5px solid ${V.border}`, borderRadius:8, fontSize:14, fontWeight:600, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}
+                onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background=V.white}>
+                Cancel
+              </button>
+              <button onClick={handleSetCurrent}
+                style={{ flex:1, padding:'10px 0', background:V.primary, border:'none', borderRadius:8, fontSize:14, fontWeight:700, color:'#fff', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
+                onMouseEnter={e => e.currentTarget.style.background=V.primaryDark}
+                onMouseLeave={e => e.currentTarget.style.background=V.primary}>
+                <i className="fas fa-check-circle"/>Yes, Set as Current
               </button>
             </div>
           </div>

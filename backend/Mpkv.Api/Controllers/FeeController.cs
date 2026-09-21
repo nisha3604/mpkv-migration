@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Mpkv.Api.Models.Candidate;
 using Mpkv.Api.Services;
+using System.Security.Claims;
 
 namespace Mpkv.Api.Controllers
 {
@@ -32,13 +33,26 @@ namespace Mpkv.Api.Controllers
         public IActionResult PaymentFailed([FromQuery] string? msg)
             => Ok(new PaymentFailedInfo { Success = false, Message = "Payment failed or was cancelled.", FailedMessage = msg ?? "Your payment could not be processed. Please try again.", RedirectUrl = "/candidate/fee" });
 
-        // GET /api/fee/transaction-history — mirrors PaymentHistory.aspx
+        // GET /api/fee/transaction-history — mirrors PaymentHistory.aspx (candidate self-service)
         [HttpGet("transaction-history"), Authorize]
         public IActionResult GetTransactionHistory()
         {
             var candidateId = long.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0", out var id) ? id : 0;
             if (candidateId <= 0) return Unauthorized();
             return Ok(_feeService.GetTransactionHistory(candidateId));
+        }
+
+        // GET /api/fee/admin-transaction-history/{appId} — admin override
+        // Mirrors PaymentHistory.aspx?P1={CandidateID}&P2={hash} (admin flow)
+        [HttpGet("admin-transaction-history/{appId}"), Authorize]
+        public IActionResult GetAdminTransactionHistory(string appId, [FromServices] ICandidateUtilsService candidateUtilsSvc)
+        {
+            var userTypeId = int.TryParse(User.FindFirstValue("UserTypeID") ?? "0", out var ut) ? ut : 0;
+            if (!Mpkv.Api.Helpers.UserTypeHelper.IsAdmin(userTypeId)) return Forbid();
+            var info = candidateUtilsSvc.GetPasswordInfo(appId);
+            if (!info.Success || info.CandidateID == 0)
+                return Ok(new { success = false, message = "Invalid Application ID." });
+            return Ok(_feeService.GetTransactionHistory(info.CandidateID));
         }
 
         // GET /api/fee/receipt/{transactionId} — mirrors PaymentReceipt.aspx

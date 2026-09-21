@@ -7,17 +7,6 @@ using System.Security.Claims;
 
 namespace Mpkv.Api.Controllers
 {
-    /// <summary>
-    /// Admin candidate utilities — mirrors Admin/SearchCandidate.aspx,
-    ///   Admin/ResetCandidatePassword.aspx, Admin/CheckDocumentVerificationStatus.aspx
-    /// Access: UserTypeID 11 or 12 only.
-    ///
-    /// POST /api/admin/candidates/search
-    /// GET  /api/admin/candidates/{appId}/password-info
-    /// POST /api/admin/candidates/reset-password
-    /// GET  /api/admin/candidates/{id}/doc-status
-    /// GET  /api/admin/candidates/{id}/application   ← NEW: full read-only application view
-    /// </summary>
     [ApiController]
     [Route("api/admin/candidates")]
     [Authorize]
@@ -73,38 +62,65 @@ namespace Mpkv.Api.Controllers
             return Ok(_svc.GetDocVerificationStatus(id, GetLoginId()));
         }
 
-        // GET /api/admin/candidates/{id}/application
-        // Returns full read-only application summary — allowed for admin AND EVC
+        // GET /api/admin/candidates/{appId}/application
         [HttpGet("{appId}/application")]
         public IActionResult GetApplication(string appId)
         {
             if (!IsAdminOrEVC()) return Forbid();
             if (string.IsNullOrWhiteSpace(appId))
                 return BadRequest(new { success = false, message = "Application ID is required." });
-
-            // Step 1 — resolve ApplicationID → CandidateID
             var pwdInfo = _svc.GetPasswordInfo(appId);
             if (!pwdInfo.Success || pwdInfo.CandidateID == 0)
                 return Ok(new { success = false, message = $"Candidate not found for Application ID: {appId}" });
-
-            // Step 2 — fetch full application summary using CandidateID
             var result = _appSvc.GetApplicationFormSummary(pwdInfo.CandidateID, GetLoginId());
             return Ok(new { success = result.Status.CandidateID > 0, data = result });
         }
 
         // POST /api/admin/candidates/{appId}/unlock
-        // Admin override — unlocks a locked application form without requiring fee payment.
-        // Mirrors ApplicationFormUnlock.aspx.cs CloseConfirmBoxYes (admin branch).
-        // SP: ApplicationForm_UnlockForm(@CandidateID, @UserLoginID=adminLoginId, @IPAddress, @PageCode)
         [HttpPost("{appId}/unlock")]
         public IActionResult UnlockForm(string appId)
         {
             if (!IsAdmin()) return Forbid();
             if (string.IsNullOrWhiteSpace(appId))
                 return BadRequest(new UnlockCandidateFormResponse { Success = false, Message = "Application ID is required." });
-
             var result = _svc.UnlockCandidateForm(appId, GetLoginId(), GetIp());
             return Ok(result);
+        }
+
+        // POST /api/admin/candidates/change-mobile-email
+        [HttpPost("change-mobile-email")]
+        public IActionResult ChangeMobileEmail([FromBody] ChangeMobileEmailRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (req == null || string.IsNullOrWhiteSpace(req.ApplicationId))
+                return BadRequest(new ChangeMobileEmailResponse { Success = false, Message = "Application ID is required." });
+            if (string.IsNullOrWhiteSpace(req.NewMobile) && string.IsNullOrWhiteSpace(req.NewEmail))
+                return BadRequest(new ChangeMobileEmailResponse { Success = false, Message = "Please provide a new mobile number or e-mail ID." });
+            return Ok(_svc.ChangeMobileEmail(req.ApplicationId, req.NewMobile, req.NewEmail, GetLoginId(), GetIp()));
+        }
+
+        // GET /api/admin/candidates/{appId}/security-question
+        // Returns security question list + current selection for the candidate
+        [HttpGet("{appId}/security-question")]
+        public IActionResult GetSecurityQuestion(string appId)
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(_svc.GetSecurityQuestionDetails(appId));
+        }
+
+        // POST /api/admin/candidates/change-security-question
+        // Mirrors Admin/CheckApplicationID.aspx?Flag=ChangeSecurityQuestion → Candidate/ChangeSecurityQuestion.aspx
+        [HttpPost("change-security-question")]
+        public IActionResult ChangeSecurityQuestion([FromBody] AdminChangeSecurityQuestionRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (req == null || string.IsNullOrWhiteSpace(req.ApplicationId))
+                return BadRequest(new ChangeMobileEmailResponse { Success = false, Message = "Application ID is required." });
+            if (req.SecurityQuestionId <= 0)
+                return BadRequest(new ChangeMobileEmailResponse { Success = false, Message = "Please select a security question." });
+            if (string.IsNullOrWhiteSpace(req.Answer))
+                return BadRequest(new ChangeMobileEmailResponse { Success = false, Message = "Please enter the answer." });
+            return Ok(_svc.ChangeSecurityQuestion(req.ApplicationId, req.SecurityQuestionId, req.Answer, GetLoginId(), GetIp()));
         }
     }
 }
