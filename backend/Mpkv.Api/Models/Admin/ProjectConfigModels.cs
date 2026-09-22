@@ -109,4 +109,28 @@ namespace Mpkv.Api.Models.Admin
         public string Message { get; set; } = "";
         public List<string> Columns { get; set; } = new();
     }
+
+    // ── Reports List page (ReportsList.aspx) ─────────────────────────────────
+    public class ReportsListPageResponse
+    {
+        public bool   Success { get; set; }
+        public string Message { get; set; } = "";
+        public List<ReportsListItem> Items { get; set; } = new();
+    }
+    public class ReportsListItem
+    {
+        public int    ReportID   { get; set; }
+        public string ReportName { get; set; } = "";
+    }
+
+    // ── Generate Report page (GenerateReport.aspx) ───────────────────────────
+    public class GenerateReportResponse
+    {
+        public bool   Success      { get; set; }
+        public string Message      { get; set; } = "";
+        public string ReportHeader { get; set; } = "";   // card title + Excel header
+        public string FileName     { get; set; } = "";   // underscored name for download
+        public List<string>              Columns { get; set; } = new();
+        public List<List<string?>>       Rows    { get; set; } = new();
+    }
 }

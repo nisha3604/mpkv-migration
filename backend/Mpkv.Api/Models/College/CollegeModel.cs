@@ -62,7 +62,8 @@ namespace Mpkv.Api.Models.College
     // ── Generic API response ──────────────────────────────────────────────────
     public class CollegeActionResponse
     {
-        public bool   Success { get; set; }
-        public string Message { get; set; } = string.Empty;
+        public bool   Success     { get; set; }
+        public string Message     { get; set; } = string.Empty;
+        public string CollegeCode { get; set; } = string.Empty; // returned by SP on success (3-char)
     }
 }

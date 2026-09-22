@@ -13,6 +13,10 @@ namespace Mpkv.Api.Services
         ExecuteReportResponse Execute(int reportId);
         TableViewListResponse GetTableViewList();
         ColumnListResponse    GetColumnList(string tableViewName);
+        // Reports List page (ReportsList.aspx)
+        ReportsListPageResponse GetReportsList();
+        // Generate Report page (GenerateReport.aspx)
+        GenerateReportResponse  GenerateReport(int reportId);
     }
 
     /// <summary>
@@ -201,6 +205,66 @@ namespace Mpkv.Api.Services
                 if (dt != null)
                     foreach (System.Data.DataRow row in dt.Rows)
                         r.Columns.Add(row[0]?.ToString() ?? "");
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GetReportsList — ReportsList.aspx Page_Load
+        // SP: Report_GetReportsList (no params)
+        // Returns: ReportID + ReportName (plain text, NOT HTML anchors — old SP
+        //          returned HTML but we return clean data; frontend builds links)
+        // ══════════════════════════════════════════════════════════════════════
+        public ReportsListPageResponse GetReportsList()
+        {
+            var r = new ReportsListPageResponse();
+            try
+            {
+                var p = new DynamicParameters();
+                p.Add("@RegionID", (short)1);
+                var dt = _db.GetDataTable("Administration_GetReportList", p);
+                if (dt == null) { r.Success = true; return r; }
+                bool HC(string n) => dt.Columns.Contains(n);
+                foreach (System.Data.DataRow row in dt.Rows)
+                    r.Items.Add(new ReportsListItem
+                    {
+                        ReportID   = HC("ReportID")   && row["ReportID"]   != DBNull.Value ? Convert.ToInt32(row["ReportID"]) : 0,
+                        ReportName = HC("ReportName") ? row["ReportName"]?.ToString() ?? "" : "",
+                    });
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GenerateReport — GenerateReport.aspx Page_Load
+        // SP: Administration_ExecuteReport(@ReportID)  — same SP used by Execute()
+        // Also fetches report name from Administration_GetReport for the header
+        // Mirrors: Tables[0]=ReportHeader, Tables[1]=data  in old project
+        // ══════════════════════════════════════════════════════════════════════
+        public GenerateReportResponse GenerateReport(int reportId)
+        {
+            var r = new GenerateReportResponse();
+            try
+            {
+                // Get report name (= ReportHeader in old project)
+                var det = GetReport(reportId);
+                r.ReportHeader = det.ReportName;
+                r.FileName     = det.ReportName.Trim().Replace(' ', '_');
+
+                var p = new DynamicParameters(); p.Add("@ReportID", reportId);
+                var dt = _db.GetDataTable("Administration_ExecuteReport", p);
+                if (dt == null) { r.Success = true; return r; }
+
+                foreach (System.Data.DataColumn col in dt.Columns)
+                    r.Columns.Add(col.ColumnName);
+
+                foreach (System.Data.DataRow row in dt.Rows)
+                    r.Rows.Add(row.ItemArray.Select(v => v?.ToString()).ToList());
+
                 r.Success = true;
             }
             catch (Exception ex) { r.Success = false; r.Message = ex.Message; }

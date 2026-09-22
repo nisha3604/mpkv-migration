@@ -1,5 +1,6 @@
 using Mpkv.Api.Data;
 using Mpkv.Api.Models.Candidate;
+using Mpkv.Api.Models.Admin;
 using Dapper;
 
 namespace Mpkv.Api.Services
@@ -16,6 +17,13 @@ namespace Mpkv.Api.Services
         PaymentHistoryResponse GetTransactionHistory(long candidateId);
         List<DropdownItem> GetFailedTransactionsDateList();
         Task<int> CheckFailedTransactionsByDate(string transactionDate);
+        // Admin refund tools
+        FeeAdminListResponse GetDuplicateTransactionsList();
+        FeeAdminListResponse GetTransactionsForRefund(string inputValue);
+        FeeAdminActionResponse InitiateRefund(long transactionId, string refundRequestId, string refundPayGateId, string refundBankRrn, string refundInitiatedDateTime, string adminLoginId, string ipAddress);
+        FeeAdminActionResponse AcceptChargeBack(long transactionId, string adminLoginId, string ipAddress);
+        FeeAdminListResponse GetRefundedTransactionsList();
+        Task<FeeAdminActionResponse> CheckAndUpdateRefundStatuses(string adminLoginId, string ipAddress);
     }
 
     public class FeeService : IFeeService
@@ -180,6 +188,172 @@ namespace Mpkv.Api.Services
             }
             catch (Exception ex) { Console.WriteLine($"[CheckFailedTransactionsByDate] Error: {ex.Message}"); }
             return count;
+        }
+
+        // ── GetDuplicateTransactionsList ──────────────────────────────────────
+        // Mirrors: FeeWorker.GetDuplicateTransactionsList()
+        // SP: Fee_GetDuplicateTransactionsList (no params)
+        public FeeAdminListResponse GetDuplicateTransactionsList()
+        {
+            var r = new FeeAdminListResponse();
+            try
+            {
+                var dt = _db.GetDataTable("Fee_GetDuplicateTransactionsList");
+                if (dt != null) foreach (System.Data.DataRow row in dt.Rows) r.Items.Add(MapRefundRow(row, dt));
+                r.Success = true;
+                if (r.Items.Count == 0) r.Message = "No duplicate transactions found.";
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ── GetTransactionsForRefund ──────────────────────────────────────────
+        // Mirrors: FeeWorker.GetTransactionsForRefund(@InputValue)
+        // SP: Fee_GetTransactionsForRefund — returns 2 tables: [0]=candidate info, [1]=transactions
+        public FeeAdminListResponse GetTransactionsForRefund(string inputValue)
+        {
+            var r = new FeeAdminListResponse();
+            try
+            {
+                var p = new DynamicParameters();
+                p.Add("@InputValue", inputValue.Trim());
+                var ds = _db.GetDataSet("Fee_GetTransactionsForRefund", p);
+                if (ds == null || ds.Tables.Count == 0) { r.Message = "No transactions found."; return r; }
+
+                // Table[0] — candidate info
+                if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                {
+                    var row0 = ds.Tables[0].Rows[0];
+                    r.PayeeApplicationID = ds.Tables[0].Columns.Contains("PayeeApplicationID") ? row0["PayeeApplicationID"]?.ToString() ?? "" : "";
+                    r.PayeeName          = ds.Tables[0].Columns.Contains("PayeeName")          ? row0["PayeeName"]?.ToString()          ?? "" : "";
+                }
+                // Table[1] — transactions
+                if (ds.Tables.Count > 1)
+                    foreach (System.Data.DataRow row in ds.Tables[1].Rows)
+                        r.Items.Add(MapRefundRow(row, ds.Tables[1]));
+
+                r.Success = true;
+                if (r.Items.Count == 0) r.Message = "No transactions found for this Application ID / Transaction ID.";
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ── InitiateRefund ────────────────────────────────────────────────────
+        // SP: Fee_UpdateRefundStatus(@CommandName='InitiateRefund')
+        public FeeAdminActionResponse InitiateRefund(long transactionId, string refundRequestId, string refundPayGateId, string refundBankRrn, string refundInitiatedDateTime, string adminLoginId, string ipAddress)
+            => CallUpdateRefundStatus(transactionId, refundRequestId, refundPayGateId, refundBankRrn, refundInitiatedDateTime, "InitiateRefund", adminLoginId, ipAddress, "Refund initiated successfully.");
+
+        // ── AcceptChargeBack ──────────────────────────────────────────────────
+        // SP: Fee_UpdateRefundStatus(@CommandName='AcceptChargeBack')
+        public FeeAdminActionResponse AcceptChargeBack(long transactionId, string adminLoginId, string ipAddress)
+            => CallUpdateRefundStatus(transactionId, "", "", "", "", "AcceptChargeBack", adminLoginId, ipAddress, "ChargeBack accepted successfully.");
+
+        // ── GetRefundedTransactionsList ───────────────────────────────────────
+        // SP: Fee_GetRefundedTransactionsList (no params) — for CheckRefundStatus page
+        public FeeAdminListResponse GetRefundedTransactionsList()
+        {
+            var r = new FeeAdminListResponse();
+            try
+            {
+                var dt = _db.GetDataTable("Fee_GetRefundedTransactionsList");
+                if (dt != null) foreach (System.Data.DataRow row in dt.Rows) r.Items.Add(MapRefundRow(row, dt));
+                r.Success = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
+
+        // ── CheckAndUpdateRefundStatuses ──────────────────────────────────────
+        // Polls NSDL for all pending refunds + updates DB
+        // SP: Fee_GetTransactionsToCheckRefundStatus + Fee_UpdateRefundStatus(@CommandName='CompleteRefund')
+        public async Task<FeeAdminActionResponse> CheckAndUpdateRefundStatuses(string adminLoginId, string ipAddress)
+        {
+            int count = 0;
+            try
+            {
+                var dt = _db.GetDataTable("Fee_GetTransactionsToCheckRefundStatus");
+                if (dt == null || dt.Rows.Count == 0) return new FeeAdminActionResponse { Success = true, Message = "No pending refunds.", Count = 0 };
+
+                var apiUrl   = _config["NSDL:RefundCheckAPIURL"] ?? "";
+                var userName = _config["NSDL:UserName"]          ?? "";
+                var password = _config["NSDL:Password"]          ?? "";
+
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (row["TransactionID"] == DBNull.Value) continue;
+                    var txId  = Convert.ToInt64(row["TransactionID"]);
+                    var bankRrn = row["BankReferenceNo"]?.ToString() ?? "";
+                    if (string.IsNullOrEmpty(bankRrn)) continue;
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(apiUrl))
+                        {
+                            var client = _httpClientFactory.CreateClient();
+                            var credentials = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{userName}:{password}"));
+                            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+                            var resp = await client.GetAsync($"{apiUrl}/{bankRrn}/refund");
+                            if (resp.IsSuccessStatusCode)
+                            {
+                                var json = await resp.Content.ReadAsStringAsync();
+                                if (json.Contains("REFUND_COMPLETED", StringComparison.OrdinalIgnoreCase))
+                                    CallUpdateRefundStatus(txId, "", "", "", "", "CompleteRefund", adminLoginId, ipAddress, "");
+                            }
+                        }
+                        count++;
+                    }
+                    catch { }
+                }
+                return new FeeAdminActionResponse { Success = true, Message = $"Checked {count} pending refunds.", Count = count };
+            }
+            catch (Exception ex) { return new FeeAdminActionResponse { Success = false, Message = ex.Message }; }
+        }
+
+        // ── Shared helpers ─────────────────────────────────────────────────────
+        private FeeAdminActionResponse CallUpdateRefundStatus(long txId, string reqId, string pgId, string rrn, string initDt, string cmd, string loginId, string ip, string successMsg)
+        {
+            try
+            {
+                var p = new DynamicParameters();
+                p.Add("@TransactionID",           txId);
+                p.Add("@RefundRequestID",          reqId);
+                p.Add("@RefundPayGateID",          pgId);
+                p.Add("@RefundBankRRN",            rrn);
+                p.Add("@RefundInitiatedDateTime",  initDt);
+                p.Add("@CommandName",              cmd);
+                p.Add("@UserLoginID",              loginId);
+                p.Add("@IPAddress",                ip);
+                var result = _db.ExecuteScalar("Fee_UpdateRefundStatus", p)?.ToString() ?? "";
+                bool ok = result.ToUpper() != "N" && result.Length > 0;
+                return new FeeAdminActionResponse { Success = ok, Message = ok ? successMsg : result };
+            }
+            catch (Exception ex) { return new FeeAdminActionResponse { Success = false, Message = ex.Message }; }
+        }
+
+        private static FeeRefundTransactionRow MapRefundRow(System.Data.DataRow row, System.Data.DataTable dt)
+        {
+            bool H(string n) => dt.Columns.Contains(n) && row[n] != DBNull.Value;
+            string S(string n) => H(n) ? row[n]?.ToString() ?? "" : "";
+            return new FeeRefundTransactionRow
+            {
+                TransactionID       = H("TransactionID")       ? Convert.ToInt64(row["TransactionID"])   : 0,
+                PayeeApplicationID  = S("PayeeApplicationID"),
+                PayeeName           = S("PayeeName"),
+                Purpose             = S("Purpose"),
+                FeeAmount           = S("FeeAmount"),
+                PaymentDate         = S("PaymentDate"),
+                BankReferenceNo     = S("BankReferenceNo"),
+                PayGateID           = S("PayGateID"),
+                TransactionStatus   = S("TransactionStatus"),
+                RefundRequestID     = S("RefundRequestID"),
+                RefundPayGateID     = S("RefundPayGateID"),
+                RefundBankRRN       = S("RefundBankRRN"),
+                RefundInitiatedDate = S("RefundInitiatedDate"),
+                RefundedDate        = S("RefundedDate"),
+                ChargeBackDate      = S("ChargeBackDate"),
+                IsEligibleForRefund = H("IsEligibleForRefund") && Convert.ToBoolean(row["IsEligibleForRefund"]),
+                ReceiptURL          = S("ReceiptURL"),
+            };
         }
     }
 }

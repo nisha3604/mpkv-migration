@@ -72,18 +72,33 @@ namespace Mpkv.Api.Services
             var response = new CollegeDetailsResponse();
             try
             {
-                var param = new DynamicParameters();
-                param.Add("@CollegeID", collegeId);
-                // SP returns single result set — use GetDataTable directly
-                var dt = _db.GetDataTable("College_GetCollegeDetails", param);
-                if (dt == null || dt.Rows.Count == 0)
-                    return new CollegeDetailsResponse { Success = false, Message = "College not found." };
-
-                response.Details        = MapSummary(dt.Rows[0], dt);
-                response.Success        = true;
+                // Always load master dropdowns (needed for both new and edit)
                 response.Districts      = GetDropdown("Base_GetMasterDistrict");
                 response.Courses        = GetDropdown("Base_GetMasterCourse");
-                response.CourseStatuses = GetDropdown("Base_GetMasterCourseStatus");
+
+                // Course Status uses the generic table-list SP (no dedicated Base_GetMasterCourseStatus SP exists)
+                var csParam = new DynamicParameters();
+                csParam.Add("@TableName",        "Master_CourseStatus");
+                csParam.Add("@DataValueField",   "CourseStatusID");
+                csParam.Add("@DataTextField",    "CourseStatus");
+                csParam.Add("@ParentField",      "");
+                csParam.Add("@ParentFieldValue", "");
+                csParam.Add("@OrderByFields",    "CourseStatusID");
+                response.CourseStatuses = GetDropdown("Base_GetMasterTableList", csParam);
+
+                if (collegeId > 0)
+                {
+                    var param = new DynamicParameters();
+                    param.Add("@CollegeID", collegeId);
+                    var dt = _db.GetDataTable("College_GetCollegeDetails", param);
+                    if (dt == null || dt.Rows.Count == 0)
+                        return new CollegeDetailsResponse { Success = false, Message = "College not found.",
+                            Districts = response.Districts, Courses = response.Courses, CourseStatuses = response.CourseStatuses };
+
+                    response.Details = MapSummary(dt.Rows[0], dt);
+                }
+                // collegeId == 0 → Add New College: return empty details + masters
+                response.Success = true;
             }
             catch (Exception ex) { response.Success = false; response.Message = ex.Message; }
             return response;
@@ -148,7 +163,7 @@ namespace Mpkv.Api.Services
 
                 // Old code checks: returnValue.Length == 3 (returns CollegeCode on success)
                 if (result.Length == 3)
-                    return new CollegeActionResponse { Success = true, Message = "College details saved successfully." };
+                    return new CollegeActionResponse { Success = true, Message = "College details saved successfully.", CollegeCode = result };
 
                 return new CollegeActionResponse { Success = false, Message = result.Length > 0 ? result : "Failed to save college details." };
             }

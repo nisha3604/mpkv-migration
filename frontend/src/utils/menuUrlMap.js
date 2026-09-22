@@ -24,7 +24,8 @@ const URL_MAP = [
   { old: 'fee/paymenthistory.aspx',                         to: '/candidate/payment-history'    },
 
   // ── Admission / Allotment (candidate) ─────────────────────────────────────
-  { old: 'admission/checkallotmentstatus.aspx',             to: '/admission/allotment-status'   },
+  // Note: candidate navbar does NOT use mapUrl() — these entries are for college/admin menus only.
+  // admission/checkallotmentstatus → /college/admission/allotment-status (allows 61,11,12)
   { old: 'admission/allotmentsummary.aspx',                 to: '/admission/allotment-summary'  },
   { old: 'admission/paycategoryconversionfee.aspx',         to: '/admission/pay-category-fee'   },
 
@@ -70,12 +71,19 @@ const URL_MAP = [
   { old: 'checkapplicationid.aspx?flag=checkpaymenthistory',    to: '/admin/candidates/payment-history' },
   { old: 'checkapplicationid.aspx?flag=printapplicationform',   to: '/admin/candidates/print-application'},
   { old: 'checkapplicationid.aspx?flag=resetcandidatepassword', to: '/admin/candidates/reset-password'  },
+  // ── Admin Fee / Refund Tools ───────────────────────────────────────────────
+  { old: 'fee/checkfailedtransactions.aspx',                to: '/admin/fee/check-failed-transactions'  },
+  { old: 'fee/refundduplicatetransactions.aspx',            to: '/admin/fee/refund-duplicate'           },
+  { old: 'fee/refundtransaction.aspx',                      to: '/admin/fee/refund-transaction'         },
+  { old: 'fee/checkrefundstatus.aspx',                      to: '/admin/fee/check-refund-status'        },
   { old: 'administration/managenotifications.aspx',         to: '/admin/notifications'              },
   { old: 'administration/manageactivitystatus.aspx',        to: '/admin/activity-status'                },
   { old: 'administration/manageadmissionschedule.aspx',     to: '/admin/admission-schedule'             },
   { old: 'administration/manageusers.aspx',                 to: '/admin/users'                          },
   { old: 'administration/manageprojectconfiguration.aspx',  to: '/admin/config'                         },
   { old: 'administration/managereports.aspx',               to: '/admin/reports'                        },
+  { old: 'reports/reportslist.aspx',                        to: '/admin/reports/list'                   },
+  { old: 'reports/generatereport.aspx',                     to: '/admin/reports/list'                   },
   { old: 'administration/manageevc.aspx',                   to: '/admin/evc'                            },
   { old: 'administration/managesubevc.aspx',                to: '/admin/sub-evc'                        },
   { old: 'administration/managephase.aspx',                 to: '/admin/phases'                         },
@@ -113,9 +121,11 @@ const URL_MAP = [
   // admin/checkapplicationid.aspx with no flag → search page (fallback only)
   // Note: flag-specific entries above handle Flag=ChangeMobileEMail etc.
   { old: 'admin/checkapplicationid.aspx',                   to: '/admin/candidates/search'              },
-  { old: 'college/editcollegedetails.aspx',                 to: '/admin/college/add'                    },
+  { old: 'college/editcollegedetails.aspx',                 to: '/admin/college/edit'                   },
 
   // ── Admin Admission (same as college but from admin role) ─────────────────
+  // Note: admission/checkallotmentstatus.aspx is already mapped to /college/admission/allotment-status
+  // in the college section above — that route allows [61,11,12] so admin can use it directly.
   { old: 'reports/allotmentreportbycollege.aspx',           to: '/college/reports/allotment'            },
   { old: 'reports/compositeadmissionreportbycollege.aspx',  to: '/college/reports/composite'            },
 ]
@@ -135,8 +145,10 @@ export function mapUrl(oldUrl) {
 
   const lower = oldUrl.toLowerCase()
 
-  // Find first matching entry (most-specific first due to map order)
-  const match = URL_MAP.find(entry => lower.includes(entry.old.toLowerCase()))
+  // Sort by longest key first so specific entries (e.g. flag=changemobilemail)
+  // beat shorter substrings (e.g. admin/checkapplicationid.aspx)
+  const sorted = [...URL_MAP].sort((a, b) => b.old.length - a.old.length)
+  const match = sorted.find(entry => lower.includes(entry.old.toLowerCase()))
   if (match) return match.to
 
   // Unknown — return '#' so nav doesn't break

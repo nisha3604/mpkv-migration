@@ -101,5 +101,17 @@ namespace Mpkv.Api.Controllers
             var result = _allotmentService.InitiateCategoryConversionFee(candidateId, request.PhaseID, request.PaymentGatewayID, GetLoginId(), GetIp());
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
+        // ── Allotment Letter Print ────────────────────────────────────────────
+        // GET /api/admission/allotment-letter-print?p1={candidateId}&p2={hash}&r1={phaseId}
+        // Mirrors: AllotmentLetterPrint.aspx — called from popup window
+        // No [Authorize] — security is the P1/P2 hash check (same as old project)
+        [HttpGet("allotment-letter-print")]
+        [AllowAnonymous]
+        public IActionResult GetAllotmentLetterPrint([FromQuery] long p1, [FromQuery] string p2, [FromQuery] int r1)
+        {
+            var result = _allotmentService.GetAllotmentLetterData(p1, r1, p2 ?? "");
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
     }
 }

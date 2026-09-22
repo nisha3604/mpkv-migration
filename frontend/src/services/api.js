@@ -155,6 +155,18 @@ export const feeApi = {
   getReceipt            : (txId) => api.get(`/fee/receipt/${txId}`),
 }
 
+// ── Fee Admin Tools (UserTypeID 11 only) ──────────────────────────────────────
+export const feeAdminApi = {
+  getFailedTransactionDates  : ()       => api.get('/fee/admin/failed-transactions/dates'),
+  checkFailedTransactions    : (date)   => api.post('/fee/admin/failed-transactions/check', { transactionDate: date }),
+  getDuplicateTransactions   : ()       => api.get('/fee/admin/duplicate-transactions'),
+  getTransactionsForRefund   : (input)  => api.get(`/fee/admin/transactions-for-refund/${encodeURIComponent(input)}`),
+  initiateRefund             : (data)   => api.post('/fee/admin/initiate-refund', data),
+  acceptChargeBack           : (txId)   => api.post('/fee/admin/accept-chargeback', { transactionID: txId }),
+  getRefundedTransactions    : ()       => api.get('/fee/admin/refunded-transactions'),
+  checkRefundStatus          : ()       => api.post('/fee/admin/check-refund-status'),
+}
+
 // ── College (self-service — UserTypeID 61) ────────────────────────────────────
 export const collegeApi = {
   getDashboard  : ()                     => api.get('/college/dashboard'),
@@ -182,6 +194,8 @@ export const admissionApi = {
   checkAllotment               : (data) => api.post('/admission/allotment-status', data),
   downloadLetter               : (data) => api.post('/admission/download-allotment-letter', data),
   payRefusalFee                : (data) => api.post('/admission/refusal-fee', data),
+  // AllotmentLetterPrint — no auth token needed (hash-based security)
+  getAllotmentLetterData        : (p1, p2, r1) => api.get(`/admission/allotment-letter-print?p1=${p1}&p2=${encodeURIComponent(p2)}&r1=${r1}`),
   checkApplicationID           : (data) => api.post('/admission/check-application-id', data),
   getAdmissionSummary          : (data) => api.post('/admission/admission-summary', data),
   confirmAdmission             : (data) => api.post('/admission/confirm', data),
@@ -290,6 +304,12 @@ export const reportBuilderApi = {
   execute       : (id)         => api.post(`/admin/reports/${id}/execute`),
   getTableViews : ()           => api.get('/admin/reports/table-views'),
   getColumns    : (tableView)  => api.get(`/admin/reports/columns?tableView=${encodeURIComponent(tableView)}`),
+}
+
+// ── Reports List + Generate Report (Admin — Reports menu) ─────────────────────
+export const reportsListApi = {
+  getList      : ()   => api.get('/admin/reports/list'),
+  generateReport: (id) => api.get(`/admin/reports/${id}/generate`),
 }
 
 // ── Admin Dashboard (CRM Stats) ───────────────────────────────────────────────

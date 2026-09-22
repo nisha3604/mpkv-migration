@@ -55,9 +55,7 @@ namespace Mpkv.Api.Controllers
             return Ok(_feeService.GetTransactionHistory(info.CandidateID));
         }
 
-        // GET /api/fee/receipt/{transactionId} — mirrors PaymentReceipt.aspx
-        // Returns transaction details for print receipt (no auth check on transactionId —
-        // FeeService.GetTransactionDetails already fetches by TransactionID)
+        // GET /api/fee/receipt/{transactionId}
         [HttpGet("receipt/{transactionId}"), Authorize]
         public IActionResult GetReceipt(long transactionId)
         {
@@ -67,5 +65,82 @@ namespace Mpkv.Api.Controllers
                 return NotFound(new { message = "Transaction not found." });
             return Ok(tx);
         }
+
+        // ── Admin Fee / Refund Tools (UserTypeID 11 only) ─────────────────────
+
+        private bool IsAdmin() => int.TryParse(User.FindFirstValue("UserTypeID") ?? "0", out var ut) && Mpkv.Api.Helpers.UserTypeHelper.IsAdmin(ut);
+        private string GetLoginId() => User.FindFirstValue(ClaimTypes.Name) ?? "";
+        private string GetIp() => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // GET /api/fee/admin/failed-transactions/dates
+        [HttpGet("admin/failed-transactions/dates"), Authorize]
+        public IActionResult GetFailedTransactionDates()
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(new { success = true, items = _feeService.GetFailedTransactionsDateList() });
+        }
+
+        // POST /api/fee/admin/failed-transactions/check
+        [HttpPost("admin/failed-transactions/check"), Authorize]
+        public async Task<IActionResult> CheckFailedTransactions([FromBody] CheckFailedRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            var count = await _feeService.CheckFailedTransactionsByDate(req?.TransactionDate ?? "");
+            return Ok(new { success = true, message = $"Checked {count} failed transactions.", count });
+        }
+
+        // GET /api/fee/admin/duplicate-transactions
+        [HttpGet("admin/duplicate-transactions"), Authorize]
+        public IActionResult GetDuplicateTransactions()
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(_feeService.GetDuplicateTransactionsList());
+        }
+
+        // GET /api/fee/admin/transactions-for-refund/{inputValue}
+        [HttpGet("admin/transactions-for-refund/{inputValue}"), Authorize]
+        public IActionResult GetTransactionsForRefund(string inputValue)
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(_feeService.GetTransactionsForRefund(inputValue));
+        }
+
+        // POST /api/fee/admin/initiate-refund
+        [HttpPost("admin/initiate-refund"), Authorize]
+        public IActionResult InitiateRefund([FromBody] InitiateRefundRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (req == null) return BadRequest(new { success = false, message = "Invalid request." });
+            return Ok(_feeService.InitiateRefund(req.TransactionID, req.RefundRequestID ?? "", req.RefundPayGateID ?? "", req.RefundBankRRN ?? "", req.RefundInitiatedDateTime ?? "", GetLoginId(), GetIp()));
+        }
+
+        // POST /api/fee/admin/accept-chargeback
+        [HttpPost("admin/accept-chargeback"), Authorize]
+        public IActionResult AcceptChargeBack([FromBody] AcceptChargeBackRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (req == null) return BadRequest(new { success = false, message = "Invalid request." });
+            return Ok(_feeService.AcceptChargeBack(req.TransactionID, GetLoginId(), GetIp()));
+        }
+
+        // GET /api/fee/admin/refunded-transactions
+        [HttpGet("admin/refunded-transactions"), Authorize]
+        public IActionResult GetRefundedTransactions()
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(_feeService.GetRefundedTransactionsList());
+        }
+
+        // POST /api/fee/admin/check-refund-status
+        [HttpPost("admin/check-refund-status"), Authorize]
+        public async Task<IActionResult> CheckRefundStatus()
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(await _feeService.CheckAndUpdateRefundStatuses(GetLoginId(), GetIp()));
+        }
     }
+
+    public class CheckFailedRequest   { public string TransactionDate { get; set; } = ""; }
+    public class InitiateRefundRequest { public long TransactionID { get; set; } public string? RefundRequestID { get; set; } public string? RefundPayGateID { get; set; } public string? RefundBankRRN { get; set; } public string? RefundInitiatedDateTime { get; set; } }
+    public class AcceptChargeBackRequest { public long TransactionID { get; set; } }
 }

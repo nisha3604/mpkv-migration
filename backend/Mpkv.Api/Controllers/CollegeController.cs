@@ -62,7 +62,11 @@ namespace Mpkv.Api.Controllers
         [HttpGet("details")]
         public IActionResult GetDetails([FromQuery] long? collegeId = null)
         {
-            var result = _collegeService.GetDetails(ResolveCollegeId(collegeId));
+            // For admin with no collegeId (Add New College flow) → pass 0 to get empty form + masters
+            long resolvedId = UserTypeHelper.IsCollege(GetUserTypeId())
+                ? GetUserId()
+                : (collegeId ?? 0);
+            var result = _collegeService.GetDetails(resolvedId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -71,7 +75,11 @@ namespace Mpkv.Api.Controllers
         public IActionResult Save([FromBody] SaveCollegeRequest request, [FromQuery] long? collegeId = null)
         {
             if (request == null) return BadRequest(new CollegeActionResponse { Success = false, Message = "Invalid request." });
-            var result = _collegeService.SaveDetails(ResolveCollegeId(collegeId), GetUserTypeId(), GetLoginId(), GetIp(), request);
+            // Admin with no collegeId = Add New (CollegeID=0 → SP does INSERT)
+            long resolvedId = UserTypeHelper.IsCollege(GetUserTypeId())
+                ? GetUserId()
+                : (collegeId ?? 0);
+            var result = _collegeService.SaveDetails(resolvedId, GetUserTypeId(), GetLoginId(), GetIp(), request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

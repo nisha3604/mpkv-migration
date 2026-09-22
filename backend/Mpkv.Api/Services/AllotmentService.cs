@@ -14,6 +14,8 @@ namespace Mpkv.Api.Services
         AllotmentSummaryResponse       GetAllotmentSummary(long candidateId);
         CategoryConversionFeeResponse  GetCategoryConversionFeeDetails(long candidateId);
         RefusalFeeInitiateResponse     InitiateCategoryConversionFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress);
+        // AllotmentLetterPrint — popup print page
+        AllotmentLetterPrintResponse   GetAllotmentLetterData(long candidateId, int phaseId, string p2Hash);
     }
 
     /// <summary>
@@ -431,5 +433,63 @@ namespace Mpkv.Api.Services
         // ══════════════════════════════════════════════════════════════════════
         public RefusalFeeInitiateResponse InitiateCategoryConversionFee(long candidateId, int phaseId, short paymentGatewayId, string userLoginId, string ipAddress)
             => InitiateRefusalFee(candidateId, phaseId, paymentGatewayId, userLoginId, ipAddress);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GetAllotmentLetterData — AllotmentLetterPrint.aspx (popup)
+        // SP: Admission_GetAllotmentStatus(@PhaseID, @CandidateID)
+        // Access: validates P1/P2 hash (mirrors AllotmentLetterPrint.aspx.cs)
+        // No session/role check — hash is the security gate
+        // ══════════════════════════════════════════════════════════════════════
+        public AllotmentLetterPrintResponse GetAllotmentLetterData(long candidateId, int phaseId, string p2Hash)
+        {
+            var r = new AllotmentLetterPrintResponse();
+            try
+            {
+                // Validate hash — mirrors: P1.GetHashCode().ToString() == P2
+                if (candidateId <= 0 || phaseId <= 0)
+                    return new AllotmentLetterPrintResponse { Success = false, Message = "Invalid request." };
+
+                var expectedHash = candidateId.GetHashCode().ToString();
+                if (p2Hash != expectedHash)
+                    return new AllotmentLetterPrintResponse { Success = false, Message = "URL has been modified. Please try again from the allotment status page." };
+
+                var param = new DynamicParameters();
+                param.Add("@PhaseID",     (short)phaseId);
+                param.Add("@CandidateID", candidateId);
+                var ds = _db.GetDataSet("Admission_GetAllotmentStatus", param);
+
+                if (ds == null || ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+                    return new AllotmentLetterPrintResponse { Success = false, Message = "No allotment data found." };
+
+                var dr = ds.Tables[0].Rows[0];
+                bool HC(string n) => ds.Tables[0].Columns.Contains(n);
+
+                var allottedCode = HC("AllottedCollegeCode") ? dr["AllottedCollegeCode"]?.ToString() ?? "" : "";
+
+                r.CandidateName          = HC("CandidateName")          ? dr["CandidateName"]?.ToString()          ?? "" : "";
+                r.ApplicationID          = HC("ApplicationID")          ? dr["ApplicationID"]?.ToString()          ?? "" : "";
+                r.Gender                 = HC("Gender")                 ? dr["Gender"]?.ToString()                 ?? "" : "";
+                r.DomicileDistrict       = HC("DomicileDistrict")       ? dr["DomicileDistrict"]?.ToString()       ?? "" : "";
+                r.Category               = HC("Category")               ? dr["Category"]?.ToString()               ?? "" : "";
+                r.PhotoURL               = HC("PhotoURL")               ? dr["PhotoURL"]?.ToString()               ?? "" : "";
+                r.SignURL                = HC("SignURL")                 ? dr["SignURL"]?.ToString()                ?? "" : "";
+                r.AllotmentPhase         = HC("AllotmentPhase")         ? dr["AllotmentPhase"]?.ToString()         ?? "" : "";
+                r.AllottedCollege        = allottedCode + (HC("AllottedCollege") ? " - " + (dr["AllottedCollege"]?.ToString() ?? "") : "");
+                r.AllottedCourse         = HC("AllottedCourse")         ? dr["AllottedCourse"]?.ToString()         ?? "" : "";
+                r.AllottedCategory       = HC("AllottedCategory")       ? dr["AllottedCategory"]?.ToString()       ?? "" : "";
+                r.AllottedType           = HC("AllottedType")           ? dr["AllottedType"]?.ToString()           ?? "" : "";
+                r.AdmissionSchedule      = HC("AdmissionSchedule")      ? dr["AdmissionSchedule"]?.ToString()      ?? "" : "";
+                r.AllotmentDate          = HC("AllotmentDate")          ? dr["AllotmentDate"]?.ToString()          ?? "" : "";
+                r.AcademicWeightage      = HC("AcademicWeightage")      ? dr["AcademicWeightage"]?.ToString()      ?? "" : "";
+                r.Weightage712           = HC("7/12Weightage")          ? dr["7/12Weightage"]?.ToString()          ?? "" : "";
+                r.NCCWeightage           = HC("NCCWeightage")           ? dr["NCCWeightage"]?.ToString()           ?? "" : "";
+                r.SportWeightage         = HC("SportWeightage")         ? dr["SportWeightage"]?.ToString()         ?? "" : "";
+                r.MPKVEmployeeWeightage  = HC("MPKVEmployeeWeightage")  ? dr["MPKVEmployeeWeightage"]?.ToString()  ?? "" : "";
+                r.TotalWeightage         = HC("TotalWeightage")         ? dr["TotalWeightage"]?.ToString()         ?? "" : "";
+                r.Success                = true;
+            }
+            catch (Exception ex) { r.Success = false; r.Message = ex.Message; }
+            return r;
+        }
     }
 }

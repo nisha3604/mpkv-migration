@@ -44,8 +44,8 @@ import ChangeSecurityQuestion from './pages/candidate/ChangeSecurityQuestion'
 import ChangePassword       from './pages/candidate/ChangePassword'
 import PaymentHistory       from './pages/candidate/PaymentHistory'
 import PaymentReceipt       from './pages/candidate/PaymentReceipt'
-// import CheckAllotmentStatus from './pages/college/CheckAllotmentStatus'
 import AllotmentSummary       from './pages/admission/AllotmentSummary'
+import AllotmentLetterPrint  from './pages/admission/AllotmentLetterPrint'
 import PayCategoryConversionFee from './pages/admission/PayCategoryConversionFee'
 // ── College pages (UserTypeID = 61 + admin 11/12) ─────────────────────────────
 import CollegeDashboard             from './pages/college/Dashboard'
@@ -83,6 +83,8 @@ import ManageAdmissionSchedule from './pages/admin/ManageAdmissionSchedule'
 import ManageUsers             from './pages/admin/ManageUsers'
 import ManageProjectConfig     from './pages/admin/ManageProjectConfig'
 import ManageReports           from './pages/admin/ManageReports'
+import AdminReportsList        from './pages/admin/AdminReportsList'
+import AdminGenerateReport     from './pages/admin/AdminGenerateReport'
 import SearchCandidate         from './pages/admin/SearchCandidate'
 import ResetCandidatePassword  from './pages/admin/ResetCandidatePassword'
 import CheckDocVerificationStatus from './pages/admin/CheckDocVerificationStatus'
@@ -96,6 +98,10 @@ import AdminChangeMobileEmail  from './pages/admin/AdminChangeMobileEmail'
 import AdminChangeSecurityQuestion from './pages/admin/AdminChangeSecurityQuestion'
 import AdminPaymentHistory        from './pages/admin/AdminPaymentHistory'
 import AdminPrintApplicationForm  from './pages/admin/AdminPrintApplicationForm'
+import CheckFailedTransactions    from './pages/admin/CheckFailedTransactions'
+import RefundDuplicateTransactions from './pages/admin/RefundDuplicateTransactions'
+import RefundTransaction           from './pages/admin/RefundTransaction'
+import CheckRefundStatus           from './pages/admin/CheckRefundStatus'
 // ── EVerification pages (UserTypeID = 41/42) ──────────────────────────────────
 import EVerificationLayout     from './components/EVerificationLayout'
 import EVDashboard             from './pages/everification/Dashboard'
@@ -268,6 +274,7 @@ export default function App() {
         {/* Activity Status management */}
         <Route path="/admin/activity-status"            element={C([11,12], CollegeLayout, ManageActivityStatus)}  />
         <Route path="/admin/admission-schedule"         element={C([11,12], CollegeLayout, ManageAdmissionSchedule)}/>
+        <Route path="/admin/admission/allotment-status" element={C([11,12], CollegeLayout, CheckAllotmentStatus)}   />
         <Route path="/admin/menu"                       element={C([11,12], CollegeLayout, MenuHome)}    />
         <Route path="/admin/menu/menus"                 element={C([11,12], CollegeLayout, ManageMenus)} />
         <Route path="/admin/menu/groups"                element={C([11,12], CollegeLayout, ManageGroups)}/>
@@ -279,6 +286,8 @@ export default function App() {
         <Route path="/admin/config"                     element={C([11,12], CollegeLayout, ManageProjectConfig)} />
         <Route path="/admin/app-settings"           element={C([11],    CollegeLayout, AppSettings)}         />
         <Route path="/admin/reports"                    element={C([11,12], CollegeLayout, ManageReports)}       />
+        <Route path="/admin/reports/list"               element={C([11,12], CollegeLayout, AdminReportsList)}    />
+        <Route path="/admin/reports/:id/view"           element={C([11,12], CollegeLayout, AdminGenerateReport)} />
 
         {/* EVC Management */}
         <Route path="/admin/evc"     element={C([11,12], CollegeLayout, ManageEvc)}    />
@@ -336,6 +345,10 @@ export default function App() {
         <Route path="/admin/candidates/change-security"   element={C([11,12], CollegeLayout, AdminChangeSecurityQuestion)} />
         <Route path="/admin/candidates/payment-history"   element={C([11,12], CollegeLayout, AdminPaymentHistory)}            />
         <Route path="/admin/candidates/print-application" element={C([11,12], CollegeLayout, AdminPrintApplicationForm)}        />
+        <Route path="/admin/fee/check-failed-transactions"    element={C([11], CollegeLayout, CheckFailedTransactions)}         />
+        <Route path="/admin/fee/refund-duplicate"             element={C([11], CollegeLayout, RefundDuplicateTransactions)}     />
+        <Route path="/admin/fee/refund-transaction"           element={C([11], CollegeLayout, RefundTransaction)}               />
+        <Route path="/admin/fee/check-refund-status"          element={C([11], CollegeLayout, CheckRefundStatus)}               />
         {/* Dynamic route LAST — must come after all specific /admin/candidates/* routes */}
         <Route path="/admin/candidates/view/:applicationId" element={C([11,12], CollegeLayout, CandidateApplicationView)} />
         {/* 404 */}

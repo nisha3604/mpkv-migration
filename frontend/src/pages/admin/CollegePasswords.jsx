@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { adminCollegeApi, collegeApi } from '../../services/api'
+import { adminCollegeApi, homeApi } from '../../services/api'
 
 /**
  * Get College Password — mirrors GetCollegePassword.aspx + .aspx.cs
@@ -28,14 +28,14 @@ export default function CollegePasswords() {
 
   // ── Load districts on mount ───────────────────────────────────────────────
   useEffect(() => {
-    collegeApi.getDetails(null)
+    homeApi.getSearchCollegeMasters()
       .then(res => {
         setDistricts([{ value: '0', text: 'All' }, ...(res.data.districts ?? [])])
       })
       .catch(() => {})
 
-    // Load all colleges on page load — same as Page_Load calling GetCollegeList()
-    handleSearch()
+    // Load all colleges on page load — pass initial filter explicitly to avoid stale closure
+    handleSearch({ districtID: '0', collegeCode: '', collegeName: '' })
   }, [])
 
   // ── Search ────────────────────────────────────────────────────────────────

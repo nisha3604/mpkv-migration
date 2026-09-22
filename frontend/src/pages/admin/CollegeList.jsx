@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { adminCollegeApi, collegeApi } from '../../services/api'
+import { adminCollegeApi, homeApi } from '../../services/api'
 
 /**
  * College List — mirrors CollegeList.aspx + CollegeList.aspx.cs
@@ -30,7 +30,7 @@ export default function CollegeList() {
 
   // ── Load masters on mount (mirrors LoadMasters()) ─────────────────────────
   useEffect(() => {
-    collegeApi.getDetails(null)
+    homeApi.getSearchCollegeMasters()
       .then(res => {
         setMasters({
           courses   : [{ value: '0', text: 'All' }, ...(res.data.courses    ?? [])],
@@ -39,8 +39,8 @@ export default function CollegeList() {
       })
       .catch(() => {})
 
-    // Load all on page load — mirrors Page_Load calling GetCollegeList()
-    handleSearch()
+    // Load all on page load — pass initial filter explicitly to avoid stale closure
+    handleSearch({ courseID: '0', districtID: '0', collegeCode: '', collegeName: '' })
   }, [])
 
   // ── Search (mirrors btnProceed_Click → GetCollegeList()) ─────────────────
@@ -72,6 +72,11 @@ export default function CollegeList() {
   // ── Click Edit → navigate to Summary (mirrors gvCollegeList_SelectedIndexChanging)
   const handleEdit = (collegeID) => {
     navigate(`/admin/college/summary?collegeId=${collegeID}`)
+  }
+
+  // ── Click Add New College → navigate to edit form with no collegeId (new record)
+  const handleAddNew = () => {
+    navigate('/admin/college/edit')
   }
 
   // ── Export to Excel (browser-side CSV — replaces server-side Excel export) ─
@@ -112,9 +117,18 @@ export default function CollegeList() {
 
         {/* ── Search Card ────────────────────────────────────────────── */}
         <div className="card mb-4 shadow-sm overflow-hidden">
-          <div className="bg-gray-900 px-5 py-3 flex items-center gap-2">
-            <i className="fas fa-search text-gray-400 text-sm" />
-            <span className="text-white font-semibold text-sm tracking-wide">Search College</span>
+          <div className="bg-gray-900 px-5 py-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <i className="fas fa-search text-gray-400 text-sm" />
+              <span className="text-white font-semibold text-sm tracking-wide">Search College</span>
+            </div>
+            {/* Add New College button — admin only */}
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded transition-colors"
+            >
+              <i className="fas fa-plus" /> Add New College
+            </button>
           </div>
           <div className="px-5 py-5">
             <div className="grid grid-cols-4 gap-4">

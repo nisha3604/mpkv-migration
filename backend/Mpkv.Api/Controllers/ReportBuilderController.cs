@@ -82,5 +82,22 @@ namespace Mpkv.Api.Controllers
                 return Ok(new ColumnListResponse { Success = true });
             return Ok(_svc.GetColumnList(tableView));
         }
+
+        // GET /api/admin/reports/list — ReportsList.aspx: clickable report list
+        [HttpGet("list")]
+        public IActionResult GetReportsList()
+        {
+            if (!IsAdmin()) return Forbid();
+            return Ok(_svc.GetReportsList());
+        }
+
+        // GET /api/admin/reports/{id}/generate — GenerateReport.aspx
+        [HttpGet("{id:int}/generate")]
+        public IActionResult GenerateReport(int id)
+        {
+            if (!IsAdmin()) return Forbid();
+            var r = _svc.GenerateReport(id);
+            return r.Success ? Ok(r) : BadRequest(r);
+        }
     }
 }

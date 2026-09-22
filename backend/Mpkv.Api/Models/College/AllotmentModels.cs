@@ -105,6 +105,36 @@ namespace Mpkv.Api.Models.College
         public string PrintUrl    { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// AllotmentLetterPrint — response model for the popup print page.
+    /// SP: Admission_GetAllotmentStatus(@PhaseID, @CandidateID)
+    /// </summary>
+    public class AllotmentLetterPrintResponse
+    {
+        public bool   Success               { get; set; }
+        public string Message               { get; set; } = "";
+        public string CandidateName         { get; set; } = "";
+        public string ApplicationID         { get; set; } = "";
+        public string Gender                { get; set; } = "";
+        public string DomicileDistrict      { get; set; } = "";
+        public string Category              { get; set; } = "";
+        public string PhotoURL              { get; set; } = "";
+        public string SignURL               { get; set; } = "";
+        public string AllotmentPhase        { get; set; } = "";
+        public string AllottedCollege       { get; set; } = "";
+        public string AllottedCourse        { get; set; } = "";
+        public string AllottedCategory      { get; set; } = "";
+        public string AllottedType          { get; set; } = "";
+        public string AdmissionSchedule     { get; set; } = "";
+        public string AllotmentDate         { get; set; } = "";
+        public string AcademicWeightage     { get; set; } = "";
+        public string Weightage712          { get; set; } = "";
+        public string NCCWeightage          { get; set; } = "";
+        public string SportWeightage        { get; set; } = "";
+        public string MPKVEmployeeWeightage { get; set; } = "";
+        public string TotalWeightage        { get; set; } = "";
+    }
+
     public class RefusalFeeInitiateRequest
     {
         public long  CandidateID      { get; set; }
